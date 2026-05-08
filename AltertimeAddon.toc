@@ -1,0 +1,11 @@
+## Interface: 120005
+## Title: AlterTime News
+## Notes: Lector de noticias de AlterTime dentro de World of Warcraft.
+## Author: AlterTime
+## Version: 0.3.0-alpha
+## SavedVariables: AlterTimeNewsDB
+
+Core.lua
+Data\NewsData.lua
+UI\Widgets.lua
+UI\MainFrame.lua
