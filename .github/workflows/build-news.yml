@@ -1,0 +1,39 @@
+name: Build AlterTime News Addon
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 */6 * * *"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Generate news data from RSS
+        run: python tools/rss_to_news.py
+
+      - name: Package addon
+        run: python tools/package_addon.py
+
+      - name: Commit generated content
+        run: |
+          git config user.name "AlterTime Bot"
+          git config user.email "bot@altertime.es"
+          git add Data Media dist AltertimeAddon.toc
+          git diff --cached --quiet || git commit -m "chore: update AlterTime news"
+          git push
