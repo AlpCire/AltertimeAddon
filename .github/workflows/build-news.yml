@@ -3,17 +3,17 @@ name: Build AlterTime News Addon
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 */6 * * *"
+    - cron: "0 */6 * * *" # cada 6 horas
 
 permissions:
   contents: write
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
-
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
     steps:
       - name: Checkout repo
@@ -25,18 +25,32 @@ jobs:
           python-version: "3.11"
 
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: |
+          pip install --upgrade pip
+          pip install Pillow
 
-      - name: Generate news data from RSS
-        run: python tools/rss_to_news.py --output Data/NewsData.lua --media-dir Media --images --limit 20 --max-age-days 0
+      - name: Generate news from RSS
+        run: |
+          python tools/rss_to_news.py \
+            --output Data/NewsData.lua \
+            --media-dir Media \
+            --images \
+            --limit 20 \
+            --max-age-days 14
 
       - name: Package addon
-        run: python tools/package_addon.py --addon-dir . --folder-name AltertimeAddon --version 0.3.3-alpha
+        run: |
+          python tools/package_addon.py \
+            --addon-dir . \
+            --version "auto-${{ github.run_number }}"
 
       - name: Commit generated content
         run: |
           git config user.name "AlterTime Bot"
           git config user.email "bot@altertime.es"
+
           git add Data Media dist AltertimeAddon.toc Core.lua
+
           git diff --cached --quiet || git commit -m "chore: update AlterTime news"
+
           git push
