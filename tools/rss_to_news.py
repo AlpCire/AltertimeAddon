@@ -414,7 +414,6 @@ def parse_rss(
             )
         )
 
-    candidates.sort(key=lambda n: n.published_at, reverse=True)
 
     if limit > 0:
         candidates = candidates[:limit]
