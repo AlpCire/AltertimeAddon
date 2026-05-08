@@ -5,30 +5,19 @@ import argparse
 import email.utils
 import hashlib
 import html
-import mimetypes
 import re
-import sys
 import time
-import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Iterable
-
-try:
-    from PIL import Image
-except Exception:
-    Image = None
-
 
 WOW_CATEGORY_KEYWORDS = {
     "wow", "world of warcraft", "retail", "classic", "midnight",
-    "the war within", "mists of pandaria classic", "addons",
-    "warcraft"
+    "the war within", "mists of pandaria classic", "addons", "warcraft"
 }
 
-USER_AGENT = "AlterTimeAddonGenerator/0.3.4"
+USER_AGENT = "AlterTimeAddonGenerator/0.3.5"
 
 
 @dataclass
@@ -47,7 +36,8 @@ class NewsItem:
 
 def fetch_url(url: str) -> bytes:
     req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
-    return urllib.request.urlopen(req, timeout=20).read()
+    with urllib.request.urlopen(req, timeout=20) as response:
+        return response.read()
 
 
 def parse_date(value: str) -> int:
@@ -58,100 +48,142 @@ def parse_date(value: str) -> int:
         return int(time.time())
 
 
-def text(node):
+def text(node: ET.Element | None) -> str:
     return html.unescape(node.text).strip() if node is not None and node.text else ""
 
 
 def is_wow(title: str, categories: list[str]) -> bool:
-    hay = (title + " " + " ".join(categories)).lower()
-    return any(k in hay for k in WOW_CATEGORY_KEYWORDS)
+    haystack = (title + " " + " ".join(categories)).lower()
+    return any(keyword in haystack for keyword in WOW_CATEGORY_KEYWORDS)
 
 
 def strip_html(value: str) -> str:
-    value = re.sub(r"<[^>]+>", "", value or "")
+    value = html.unescape(value or "")
+    value = re.sub(r"<script[^>]*>.*?</script>", "", value, flags=re.I | re.S)
+    value = re.sub(r"<style[^>]*>.*?</style>", "", value, flags=re.I | re.S)
+    value = re.sub(r"<[^>]+>", "", value)
     value = re.sub(r"\s+", " ", value)
     return value.strip()
 
 
+def lua_escape(value: str) -> str:
+    value = value or ""
+    value = value.replace("\\", "\\\\")
+    value = value.replace('"', '\\"')
+    value = value.replace("\r", "")
+    value = value.replace("\n", "\\n")
+    return f'"{value}"'
+
+
 def slugify(value: str) -> str:
-    value = value.lower()
+    value = html.unescape(value or "").lower()
+    replacements = {
+        "á": "a", "é": "e", "í": "i", "ó": "o", "ú": "u",
+        "ü": "u", "ñ": "n", "ç": "c",
+    }
+
+    for src, dst in replacements.items():
+        value = value.replace(src, dst)
+
     value = re.sub(r"[^a-z0-9]+", "-", value)
-    return value.strip("-")[:80]
+    return value.strip("-")[:80] or "noticia"
 
 
-def download_image(url: str, path: Path):
-    try:
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_bytes(fetch_url(url))
-    except:
-        pass
+def build_news_item(item: ET.Element) -> NewsItem | None:
+    title = text(item.find("title"))
+    url = text(item.find("link"))
+    pub = parse_date(text(item.find("pubDate")))
+    cats = [text(c) for c in item.findall("category") if text(c)]
+
+    if not title or not url:
+        return None
+
+    if not is_wow(title, cats):
+        return None
+
+    desc = strip_html(text(item.find("description")))
+    guid = text(item.find("guid")) or url
+
+    return NewsItem(
+        id=hashlib.md5(guid.encode("utf-8")).hexdigest()[:10],
+        slug=slugify(title),
+        title=title,
+        excerpt=desc,
+        author="AlterTime",
+        published_at=pub,
+        categories=cats or ["Retail"],
+        url=url,
+        body=[{"type": "paragraph", "text": desc}],
+    )
 
 
 def parse_rss(raw_xml: bytes, limit: int, max_age_days: int) -> list[NewsItem]:
     root = ET.fromstring(raw_xml)
     channel = root.find("channel")
 
+    if channel is None:
+        raise RuntimeError("RSS inválido: falta nodo <channel>")
+
     now = int(time.time())
     max_age = max_age_days * 86400
 
-    print(f"[DEBUG] Fecha actual: {time.strftime('%Y-%m-%d', time.gmtime(now))}")
+    print(f"[DEBUG] Fecha actual runner UTC: {time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(now))}")
+    print(f"[DEBUG] max_age_days: {max_age_days}")
 
-    items: list[NewsItem] = []
+    all_wow_items: list[NewsItem] = []
+    recent_items: list[NewsItem] = []
 
     for item in channel.findall("item"):
-        title = text(item.find("title"))
-        url = text(item.find("link"))
-        pub = parse_date(text(item.find("pubDate")))
+        built = build_news_item(item)
 
-        print(f"[DEBUG] Noticia: {title[:40]}... Fecha: {time.strftime('%Y-%m-%d', time.gmtime(pub))}")
-
-        # ❌ futura → ignorar
-        if pub > now + 86400:
-            print("[SKIP] futura")
+        if built is None:
+            title = text(item.find("title"))
+            print(f"[SKIP] No WoW o inválida: {title[:80]}")
             continue
 
-        # ❌ vieja → ignorar
-        if max_age_days > 0 and (now - pub > max_age):
-            print("[SKIP] demasiado antigua")
+        pub_text = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(built.published_at))
+        age_seconds = now - built.published_at
+        age_days = age_seconds / 86400
+
+        print(f"[RSS] {pub_text} | age={age_days:.2f}d | {built.title[:90]}")
+
+        all_wow_items.append(built)
+
+        if built.published_at > now + 86400:
+            print(f"[SKIP] Fecha futura: {built.title[:80]}")
             continue
 
-        cats = [text(c) for c in item.findall("category")]
-
-        if not is_wow(title, cats):
+        if max_age_days > 0 and age_seconds > max_age:
+            print(f"[SKIP] Demasiado antigua: {built.title[:80]}")
             continue
 
-        desc = strip_html(text(item.find("description")))
+        recent_items.append(built)
 
-        items.append(
-            NewsItem(
-                id=hashlib.md5(url.encode()).hexdigest()[:10],
-                slug=slugify(title),
-                title=title,
-                excerpt=desc,
-                author="AlterTime",
-                published_at=pub,
-                categories=cats,
-                url=url,
-                body=[{"type": "paragraph", "text": desc}],
-            )
-        )
+    all_wow_items.sort(key=lambda x: x.published_at, reverse=True)
+    recent_items.sort(key=lambda x: x.published_at, reverse=True)
 
-    items.sort(key=lambda x: x.published_at, reverse=True)
+    if max_age_days > 0 and recent_items:
+        print(f"[OK] Usando {len(recent_items)} noticias recientes.")
+        return recent_items[:limit] if limit > 0 else recent_items
 
-    if limit:
-        items = items[:limit]
+    if max_age_days > 0 and not recent_items:
+        print("[WARN] No hay noticias recientes según pubDate del RSS.")
+        print("[WARN] Fallback activado: usando últimas noticias WoW disponibles sin filtro de fecha.")
 
-    # 🔴 CLAVE → evitar builds con basura
-    if max_age_days > 0 and not items:
-        raise RuntimeError("❌ No hay noticias recientes. El RSS no devuelve datos válidos.")
+    fallback = all_wow_items[:limit] if limit > 0 else all_wow_items
 
-    return items
+    if not fallback:
+        raise RuntimeError("No se encontraron noticias WoW en el RSS.")
+
+    return fallback
 
 
 def render(items: list[NewsItem]) -> str:
     out = [
         "local ADDON_NAME, ns = ...",
         "",
+        "-- Generado automáticamente por tools/rss_to_news.py.",
+        "-- No editar a mano salvo emergencia.",
         f"ns.NewsGeneratedAt = {int(time.time())}",
         'ns.NewsSource = "rss"',
         "",
@@ -160,39 +192,46 @@ def render(items: list[NewsItem]) -> str:
 
     for n in items:
         out += [
-            "  {",
-            f'    title = "{n.title}",',
-            f'    excerpt = "{n.excerpt}",',
-            f'    url = "{n.url}",',
-            f'    publishedAt = {n.published_at},',
-            "    body = {",
-            f'      {{ type = "paragraph", text = "{n.excerpt}" }},',
+            "    {",
+            f"        id = {lua_escape(n.id)},",
+            f"        slug = {lua_escape(n.slug)},",
+            f"        title = {lua_escape(n.title)},",
+            f"        excerpt = {lua_escape(n.excerpt)},",
+            f"        author = {lua_escape(n.author)},",
+            f"        publishedAt = {n.published_at},",
+            "        categories = { " + ", ".join(lua_escape(c) for c in n.categories) + " },",
+            f"        url = {lua_escape(n.url)},",
+            "        cover = nil,",
+            "        body = {",
+            f"            {{ type = \"paragraph\", text = {lua_escape(n.excerpt)} }},",
+            "        },",
             "    },",
-            "  },",
         ]
 
     out += ["}", ""]
     return "\n".join(out)
 
 
-def main():
-    p = argparse.ArgumentParser()
-    p.add_argument("--rss", default="https://altertime.es/feed?rss")
-    p.add_argument("--output", default="Data/NewsData.lua")
-    p.add_argument("--limit", type=int, default=20)
-    p.add_argument("--max-age-days", type=int, default=7)
-    args = p.parse_args()
+def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--rss", default="https://altertime.es/feed?rss")
+    parser.add_argument("--output", default="Data/NewsData.lua")
+    parser.add_argument("--limit", type=int, default=20)
+    parser.add_argument("--max-age-days", type=int, default=7)
+    parser.add_argument("--media-dir", default="Media")
+    parser.add_argument("--images", action="store_true")
+    args = parser.parse_args()
 
     raw = fetch_url(args.rss)
-
     items = parse_rss(raw, args.limit, args.max_age_days)
 
-    lua = render(items)
+    output = Path(args.output)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(render(items), encoding="utf-8", newline="\n")
 
-    Path(args.output).write_text(lua, encoding="utf-8")
-
-    print(f"[OK] {len(items)} noticias generadas")
+    print(f"[OK] {len(items)} noticias generadas en {output}")
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())
