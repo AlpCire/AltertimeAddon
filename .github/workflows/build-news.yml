@@ -12,6 +12,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -28,7 +31,7 @@ jobs:
         run: python tools/rss_to_news.py --output Data/NewsData.lua --media-dir Media --images --limit 20 --max-age-days 0
 
       - name: Package addon
-        run: python tools/package_addon.py --addon-dir . --folder-name AltertimeAddon --version 0.3.2-alpha
+        run: python tools/package_addon.py --addon-dir . --folder-name AltertimeAddon --version 0.3.3-alpha
 
       - name: Commit generated content
         run: |
