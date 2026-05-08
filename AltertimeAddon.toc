@@ -2,7 +2,7 @@
 ## Title: AlterTime News
 ## Notes: Lector de noticias de AlterTime dentro de World of Warcraft.
 ## Author: RoCkEt
-## Version: auto-12
+## Version: auto-13
 ## SavedVariables: AlterTimeNewsDB
 
 Core.lua

@@ -2,7 +2,7 @@ local ADDON_NAME, ns = ...
 
 -- Generado automáticamente por tools/rss_to_news.py.
 -- No editar a mano salvo emergencia.
-ns.NewsGeneratedAt = 1778265540
+ns.NewsGeneratedAt = 1778268308
 ns.NewsSource = "rss"
 
 ns.News = {
