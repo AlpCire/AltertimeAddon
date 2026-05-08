@@ -42,7 +42,7 @@ EXCLUDED_CATEGORY_KEYWORDS = {
     "starcraft",
 }
 
-USER_AGENT = "AlterTimeAddonGenerator/0.3.2 (+https://altertime.es)"
+USER_AGENT = "AlterTimeAddonGenerator/0.3.3 (+https://altertime.es)"
 
 
 @dataclass
@@ -84,7 +84,6 @@ def fetch_url(url: str, timeout: int = 25) -> bytes:
 def text_content(node: ET.Element | None) -> str:
     if node is None or node.text is None:
         return ""
-
     return html.unescape(node.text).strip()
 
 
@@ -128,9 +127,10 @@ def strip_html(value: str) -> str:
     value = re.sub(r"[ \t]+", " ", value)
     value = re.sub(r"\n{3,}", "\n\n", value)
 
-    lines = []
+    lines: list[str] = []
     for line in value.splitlines():
         line = line.strip()
+
         if not line:
             lines.append("")
             continue
@@ -374,7 +374,7 @@ def parse_rss(
     if channel is None:
         raise RuntimeError("RSS sin nodo <channel>")
 
-    items: list[NewsItem] = []
+    candidates: list[NewsItem] = []
     now = int(time.time())
 
     for item in channel.findall("item"):
@@ -407,13 +407,44 @@ def parse_rss(
 
         image_urls = extract_image_urls(item, content_html or description, url)
 
+        candidates.append(
+            NewsItem(
+                id=item_id,
+                slug=slug,
+                title=title,
+                excerpt=excerpt,
+                author=author,
+                published_at=published_at,
+                categories=categories or ["Retail"],
+                url=url,
+                cover=None,
+                body=[],
+            )
+        )
+
+        candidates[-1]._content_html = content_html  # type: ignore[attr-defined]
+        candidates[-1]._description = description  # type: ignore[attr-defined]
+        candidates[-1]._image_urls = image_urls  # type: ignore[attr-defined]
+
+    candidates.sort(key=lambda n: n.published_at, reverse=True)
+
+    if limit > 0:
+        candidates = candidates[:limit]
+
+    final_items: list[NewsItem] = []
+
+    for candidate in candidates:
+        image_urls = getattr(candidate, "_image_urls", [])
+        content_html = getattr(candidate, "_content_html", "")
+        description = getattr(candidate, "_description", "")
+
         cover_path = None
         inline_assets: list[ImageAsset] = []
 
         if download_images and image_urls:
             cover_asset = download_and_convert_image(
                 image_urls[0],
-                slug,
+                candidate.slug,
                 1,
                 media_dir,
                 "cover",
@@ -427,7 +458,7 @@ def parse_rss(
             for idx, image_url in enumerate(image_urls[1:3], start=2):
                 asset = download_and_convert_image(
                     image_url,
-                    slug,
+                    candidate.slug,
                     idx,
                     media_dir,
                     "inline",
@@ -440,29 +471,25 @@ def parse_rss(
 
         body = parse_body(content_html, description, inline_assets)
 
-        if not body and excerpt:
-            body = [{"type": "paragraph", "text": excerpt}]
+        if not body and candidate.excerpt:
+            body = [{"type": "paragraph", "text": candidate.excerpt}]
 
-        items.append(
+        final_items.append(
             NewsItem(
-                id=item_id,
-                slug=slug,
-                title=title,
-                excerpt=excerpt,
-                author=author,
-                published_at=published_at,
-                categories=categories or ["Retail"],
-                url=url,
+                id=candidate.id,
+                slug=candidate.slug,
+                title=candidate.title,
+                excerpt=candidate.excerpt,
+                author=candidate.author,
+                published_at=candidate.published_at,
+                categories=candidate.categories,
+                url=candidate.url,
                 cover=cover_path,
                 body=body,
             )
         )
 
-        if len(items) >= limit:
-            break
-
-    items.sort(key=lambda n: n.published_at, reverse=True)
-    return items
+    return final_items
 
 
 def render_lua(items: list[NewsItem]) -> str:
@@ -533,7 +560,7 @@ def main() -> int:
     parser.add_argument("--images", action="store_true")
     parser.add_argument("--max-cover-width", type=int, default=768)
     parser.add_argument("--max-inline-width", type=int, default=760)
-    parser.add_argument("--max-age-days", type=int, default=7)
+    parser.add_argument("--max-age-days", type=int, default=0)
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
 
