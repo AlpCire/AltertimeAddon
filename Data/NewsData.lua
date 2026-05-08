@@ -2,7 +2,7 @@ local ADDON_NAME, ns = ...
 
 -- Generado automáticamente por tools/rss_to_news.py.
 -- No editar a mano salvo emergencia.
-ns.NewsGeneratedAt = 1778259276
+ns.NewsGeneratedAt = 1778259836
 ns.NewsSource = "rss"
 
 ns.News = {
@@ -17,21 +17,11 @@ ns.News = {
         url = "https://altertime.es/article/blizzard-pide-perdon-por-el-lanzamiento-con-errores-del-parche-12-0-5-de-midnight",
         cover = "Interface\\\\AddOns\\\\AltertimeAddon\\\\Media\\\\Covers\\\\blizzard-pide-perdon-por-el-lanzamiento-con-errores-del-parche-12-0-5-de-midnight_01_2cc47e8b.tga",
         body = {
-            { type = "paragraph", text = "No te pierdas el comunicado completo añadido en la web oficial." },
-        },
-    },
-    {
-        id = "64ffa9a10951",
-        slug = "blizzard-reembolsara-los-nucleo-de-vacio-nebulosos-a-los-jugadores-que-los-gastaron-antes-",
-        title = "Blizzard reembolsará los Núcleo de Vacío nebulosos a los jugadores que los gastaron antes de la corrección que realizaron",
-        excerpt = "¡Conoce todos los detalles sobre lo que ha ocurrido recientemente y la solución que ha mencionado Blizzard que realizará!",
-        author = "AlterTime",
-        publishedAt = 1776984360,
-        categories = { "Retail" },
-        url = "https://altertime.es/article/blizzard-reembolsara-los-nucleo-de-vacio-nebulosos-a-los-jugadores-que-los-gastaron-antes-de-la-correccion-que-realizaron",
-        cover = "Interface\\\\AddOns\\\\AltertimeAddon\\\\Media\\\\Covers\\\\blizzard-reembolsara-los-nucleo-de-vacio-nebulosos-a-los-jugadores-que-los-gastaron-antes-_01_2f23503f.tga",
-        body = {
-            { type = "paragraph", text = "¡Conoce todos los detalles sobre lo que ha ocurrido recientemente y la solución que ha mencionado Blizzard que realizará!" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
         },
     },
     {
@@ -45,7 +35,11 @@ ns.News = {
         url = "https://altertime.es/article/como-conseguir-el-logro-es-solo-un-rasguno-en-world-of-warcraft",
         cover = "Interface\\\\AddOns\\\\AltertimeAddon\\\\Media\\\\Covers\\\\como-conseguir-el-logro-es-solo-un-rasguno-en-world-of-warcraft_01_86c883c3.tga",
         body = {
-            { type = "heading", text = "¡Consiguelo ya!" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
         },
     },
     {
@@ -59,7 +53,11 @@ ns.News = {
         url = "https://altertime.es/article/datamineados-nuevos-packs-de-adornos-que-llegaran-a-la-tienda-de-world-of-warcraft",
         cover = "Interface\\\\AddOns\\\\AltertimeAddon\\\\Media\\\\Covers\\\\datamineados-nuevos-packs-de-adornos-que-llegaran-a-la-tienda-de-world-of-warcraft_01_d1df068f.tga",
         body = {
-            { type = "heading", text = "¡Te traemos toda la información!" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
         },
     },
     {
@@ -73,7 +71,11 @@ ns.News = {
         url = "https://altertime.es/article/blizzard-anuncia-que-las-tiradas-extra-de-botin-ahora-son-seguras-utilizarlas-en-world-of-warcraft",
         cover = "Interface\\\\AddOns\\\\AltertimeAddon\\\\Media\\\\Covers\\\\blizzard-anuncia-que-las-tiradas-extra-de-botin-ahora-son-seguras-utilizarlas-en-world-of-_01_52c8d144.tga",
         body = {
-            { type = "heading", text = "¡No te pierdas el comentario oficial anunciado por Blizzard en los foros oficiales!" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
         },
     },
     {
@@ -87,7 +89,11 @@ ns.News = {
         url = "https://altertime.es/article/las-nuevas-monturas-y-mascotas-imbuidas-por-el-sha-aparecen-en-la-region-china-de-world-of-warcraft",
         cover = "Interface\\\\AddOns\\\\AltertimeAddon\\\\Media\\\\Covers\\\\las-nuevas-monturas-y-mascotas-imbuidas-por-el-sha-aparecen-en-la-region-china-de-world-of_01_1f61a7f8.tga",
         body = {
-            { type = "heading", text = "¡Te traemos toda la información!" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
         },
     },
     {
@@ -101,7 +107,11 @@ ns.News = {
         url = "https://altertime.es/article/como-conseguir-nucleos-del-vacio-nebulosos-en-el-parche-12-0-5-de-world-of-warcraft",
         cover = "Interface\\\\AddOns\\\\AltertimeAddon\\\\Media\\\\Covers\\\\como-conseguir-nucleos-del-vacio-nebulosos-en-el-parche-12-0-5-de-world-of-warcraft_01_0ecfb8cc.tga",
         body = {
-            { type = "heading", text = "¡Te contamos como conseguirlos!" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
         },
     },
     {
@@ -115,7 +125,11 @@ ns.News = {
         url = "https://altertime.es/article/como-conseguir-la-montura-bocadragon-tocado-por-el-vacio-en-world-of-warcraft",
         cover = "Interface\\\\AddOns\\\\AltertimeAddon\\\\Media\\\\Covers\\\\como-conseguir-la-montura-bocadragon-tocado-por-el-vacio-en-world-of-warcraft_01_31a22a4f.tga",
         body = {
-            { type = "heading", text = "¡Te contamos como conseguirla!" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
         },
     },
     {
@@ -129,7 +143,11 @@ ns.News = {
         url = "https://altertime.es/article/como-conseguir-la-montura-vermis-de-mana-desvinculada-en-world-of-warcraft",
         cover = "Interface\\\\AddOns\\\\AltertimeAddon\\\\Media\\\\Covers\\\\como-conseguir-la-montura-vermis-de-mana-desvinculada-en-world-of-warcraft_01_df38b7dd.tga",
         body = {
-            { type = "heading", text = "¡Consiguela ya!" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
         },
     },
     {
@@ -143,7 +161,11 @@ ns.News = {
         url = "https://altertime.es/article/como-conseguir-la-montura-lince-corrompido-por-el-vacio-en-world-of-warcraft",
         cover = "Interface\\\\AddOns\\\\AltertimeAddon\\\\Media\\\\Covers\\\\como-conseguir-la-montura-lince-corrompido-por-el-vacio-en-world-of-warcraft_01_10bb6bc1.tga",
         body = {
-            { type = "heading", text = "¡No te la pierdas!" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
         },
     },
     {
@@ -157,7 +179,11 @@ ns.News = {
         url = "https://altertime.es/article/como-conseguir-la-montura-halcon-zancudo-corrompido-por-el-vacio-en-world-of-warcraft",
         cover = "Interface\\\\AddOns\\\\AltertimeAddon\\\\Media\\\\Covers\\\\como-conseguir-la-montura-halcon-zancudo-corrompido-por-el-vacio-en-world-of-warcraft_01_3cdaad13.tga",
         body = {
-            { type = "heading", text = "¡Te contamos como conseguirla!" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
         },
     },
     {
@@ -171,7 +197,11 @@ ns.News = {
         url = "https://altertime.es/article/como-conseguir-marga-de-luz-del-vacio-de-forma-sencilla-en-midnight",
         cover = "Interface\\\\AddOns\\\\AltertimeAddon\\\\Media\\\\Covers\\\\como-conseguir-marga-de-luz-del-vacio-de-forma-sencilla-en-midnight_01_8f72465d.tga",
         body = {
-            { type = "heading", text = "¡No te pierdas esta mini guia!" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
         },
     },
     {
@@ -185,7 +215,11 @@ ns.News = {
         url = "https://altertime.es/article/progreso-de-hermandades-en-espana-para-las-bandas-de-la-temporada-1-de-midnight-en-mitico",
         cover = "Interface\\\\AddOns\\\\AltertimeAddon\\\\Media\\\\Covers\\\\progreso-de-hermandades-en-espana-para-las-bandas-de-la-temporada-1-de-midnight-en-mitico_01_e0daa203.tga",
         body = {
-            { type = "paragraph", text = "¡No te pierdas las hermandades que se encuentran actualmente en las posiciones más altas en el progreso con la Temporada 1 de Midnight!" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
         },
     },
     {
@@ -199,7 +233,11 @@ ns.News = {
         url = "https://altertime.es/article/el-logro-de-3400-de-indice-en-miticas-estara-temporalmente-desactivado-en-el-parche-12-0-5-de-midnight",
         cover = "Interface\\\\AddOns\\\\AltertimeAddon\\\\Media\\\\Covers\\\\el-logro-de-3400-de-indice-en-miticas-estara-temporalmente-desactivado-en-el-parche-12-0-5_01_2350ae8f.tga",
         body = {
-            { type = "heading", text = "¡No te pierdas todos los detalles publicados por Blizzard en los foros oficiales!" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
         },
     },
     {
@@ -213,7 +251,11 @@ ns.News = {
         url = "https://altertime.es/article/el-evento-de-la-noche-venthyr-llega-a-los-servidores-de-world-of-warcraft-en-china",
         cover = "Interface\\\\AddOns\\\\AltertimeAddon\\\\Media\\\\Covers\\\\el-evento-de-la-noche-venthyr-llega-a-los-servidores-de-world-of-warcraft-en-china_01_182f18db.tga",
         body = {
-            { type = "heading", text = "¡Te contamos todos los detalles!" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
         },
     },
     {
@@ -227,7 +269,11 @@ ns.News = {
         url = "https://altertime.es/article/ya-esta-aqui-mists-of-pandaria-classic-aventuras-sin-par",
         cover = "Interface\\\\AddOns\\\\AltertimeAddon\\\\Media\\\\Covers\\\\ya-esta-aqui-mists-of-pandaria-classic-aventuras-sin-par_01_e8066ca0.tga",
         body = {
-            { type = "paragraph", text = "Las místicas tierras de Pandaria están repletas de peligros. Los inquebrantables campeones de World of Warcraft: Mists of Pandaria Classic ya pueden aprovechar la bonificación a la experiencia de Aventuras sin par, ¡que aumenta un 50 % la experiencia obtenida por Azeroth hasta el nivel 90!" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
         },
     },
     {
@@ -241,7 +287,11 @@ ns.News = {
         url = "https://altertime.es/article/mists-of-pandaria-classic-rauschende-reisen-ist-jetzt-live",
         cover = "Interface\\\\AddOns\\\\AltertimeAddon\\\\Media\\\\Covers\\\\mists-of-pandaria-classic-rauschende-reisen-ist-jetzt-live_01_17c7df89.tga",
         body = {
-            { type = "paragraph", text = "Las místicas tierras de Pandaria están repletas de peligros. Los inquebrantables campeones de World of Warcraft: Mists of Pandaria Classic ya pueden aprovechar la bonificación a la experiencia de Aventuras sin par, ¡que aumenta un 50 % la experiencia obtenida por Azeroth hasta el nivel 90!" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
         },
     },
     {
@@ -255,21 +305,11 @@ ns.News = {
         url = "https://altertime.es/article/que-hacer-esta-semana-en-world-of-warcraft-parche-12-0-5-midnight",
         cover = "Interface\\\\AddOns\\\\AltertimeAddon\\\\Media\\\\Covers\\\\que-hacer-esta-semana-en-world-of-warcraft-parche-12-0-5-midnight_01_d4a94294.tga",
         body = {
-            { type = "heading", text = "¡No te pierdas todo lo que puedes realizar esta semana!" },
-        },
-    },
-    {
-        id = "0a43cc6f70b7",
-        slug = "blizzard-comparte-varios-detalles-sobre-la-creacion-del-evento-duelo-de-adornos",
-        title = "Blizzard comparte varios detalles sobre la creación del evento Duelo de Adornos",
-        excerpt = "¡Te traemos toda la información!",
-        author = "AlterTime",
-        publishedAt = 1776776400,
-        categories = { "Retail" },
-        url = "https://altertime.es/article/blizzard-comparte-varios-detalles-sobre-la-creacion-del-evento-duelo-de-adornos",
-        cover = "Interface\\\\AddOns\\\\AltertimeAddon\\\\Media\\\\Covers\\\\blizzard-comparte-varios-detalles-sobre-la-creacion-del-evento-duelo-de-adornos_01_d8dd0af8.tga",
-        body = {
-            { type = "heading", text = "¡Te traemos toda la información!" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
         },
     },
     {
@@ -283,7 +323,11 @@ ns.News = {
         url = "https://altertime.es/article/ranking-de-tanques-sanadores-y-dps-para-banda-y-miticas-semana-5-temporada-1-midnight",
         cover = "Interface\\\\AddOns\\\\AltertimeAddon\\\\Media\\\\Covers\\\\ranking-de-tanques-sanadores-y-dps-para-banda-y-miticas-semana-5-temporada-1-midnight_01_aad39123.tga",
         body = {
-            { type = "heading", text = "¡No te pierdas el ranking de esta pasada semana!" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
+            { type = "paragraph", text = "');background-repeat:repeat-x;background-position:left;background-size:50% auto;background-origin:border-box\">" },
         },
     },
 }
