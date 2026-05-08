@@ -42,7 +42,7 @@ EXCLUDED_CATEGORY_KEYWORDS = {
     "starcraft",
 }
 
-USER_AGENT = "AlterTimeAddonGenerator/0.3.1 (+https://altertime.es)"
+USER_AGENT = "AlterTimeAddonGenerator/0.3.2 (+https://altertime.es)"
 
 
 @dataclass
@@ -76,6 +76,7 @@ def fetch_url(url: str, timeout: int = 25) -> bytes:
             "Accept": "application/rss+xml, application/xml, text/xml, text/html, image/*",
         },
     )
+
     with urllib.request.urlopen(req, timeout=timeout) as response:
         return response.read()
 
@@ -83,13 +84,39 @@ def fetch_url(url: str, timeout: int = 25) -> bytes:
 def text_content(node: ET.Element | None) -> str:
     if node is None or node.text is None:
         return ""
+
     return html.unescape(node.text).strip()
+
+
+def is_bad_text(value: str) -> bool:
+    lower = (value or "").lower()
+
+    bad_fragments = [
+        "background-repeat",
+        "background-position",
+        "background-size",
+        "background-origin",
+        "linear-gradient",
+        "rgba(",
+        "url(",
+        "class=",
+        "style=",
+        "<script",
+        "<style",
+        "window.",
+        "document.",
+    ]
+
+    return any(fragment in lower for fragment in bad_fragments)
 
 
 def strip_html(value: str) -> str:
     value = html.unescape(value or "")
+
     value = re.sub(r"<script[^>]*>.*?</script>", "", value, flags=re.I | re.S)
     value = re.sub(r"<style[^>]*>.*?</style>", "", value, flags=re.I | re.S)
+    value = re.sub(r"<!--.*?-->", "", value, flags=re.S)
+
     value = re.sub(r"<br\s*/?>", "\n", value, flags=re.I)
     value = re.sub(r"</p\s*>", "\n\n", value, flags=re.I)
     value = re.sub(r"<li[^>]*>", "\n• ", value, flags=re.I)
@@ -97,9 +124,23 @@ def strip_html(value: str) -> str:
     value = re.sub(r"</h[1-6]\s*>", "\n\n", value, flags=re.I)
     value = re.sub(r"</div\s*>", "\n", value, flags=re.I)
     value = re.sub(r"<[^>]+>", "", value)
+
     value = re.sub(r"[ \t]+", " ", value)
     value = re.sub(r"\n{3,}", "\n\n", value)
-    return value.strip()
+
+    lines = []
+    for line in value.splitlines():
+        line = line.strip()
+        if not line:
+            lines.append("")
+            continue
+
+        if is_bad_text(line):
+            continue
+
+        lines.append(line)
+
+    return "\n".join(lines).strip()
 
 
 def lua_escape(value: str) -> str:
@@ -111,6 +152,7 @@ def lua_escape(value: str) -> str:
 
 def slugify(value: str) -> str:
     value = html.unescape(value or "").lower()
+
     replacements = {
         "á": "a",
         "é": "e",
@@ -150,21 +192,6 @@ def get_namespaces() -> dict[str, str]:
 
 def absolutize(url: str, base_url: str) -> str:
     return urllib.parse.urljoin(base_url, html.unescape(url or "").strip())
-
-
-def extract_article_html(page_html: str) -> str:
-    patterns = [
-        r'<article[^>]*>(.*?)</article>',
-        r'<main[^>]*>(.*?)</main>',
-        r'<div[^>]+class=["\'][^"\']*(?:article|post|entry|content|news)[^"\']*["\'][^>]*>(.*?)</div>',
-    ]
-
-    for pattern in patterns:
-        match = re.search(pattern, page_html, flags=re.I | re.S)
-        if match:
-            return match.group(1)
-
-    return ""
 
 
 def extract_image_urls(item: ET.Element, content_html: str, base_url: str) -> list[str]:
@@ -228,6 +255,7 @@ def resize_image(img: Image.Image, max_width: int) -> Image.Image:
 
     ratio = max_width / img.width
     new_size = (max_width, max(1, int(img.height * ratio)))
+
     return img.resize(new_size, Image.LANCZOS)
 
 
@@ -275,7 +303,7 @@ def download_and_convert_image(
         return None
 
     relative = tga_path.relative_to(media_dir.parent)
-    lua_path = "Interface\\\\AddOns\\\\AltertimeAddon\\\\" + "\\\\".join(relative.parts)
+    lua_path = "Interface\\AddOns\\AltertimeAddon\\" + "\\".join(relative.parts)
 
     return ImageAsset(url, str(tga_path), lua_path, width, height)
 
@@ -292,6 +320,9 @@ def parse_body(content_html: str, description: str, assets: list[ImageAsset]) ->
             continue
 
         if len(raw) < 3:
+            continue
+
+        if is_bad_text(raw):
             continue
 
         if raw.startswith("• "):
@@ -332,9 +363,9 @@ def parse_rss(
     limit: int,
     media_dir: Path,
     download_images: bool,
-    full_articles: bool,
     max_cover_width: int,
     max_inline_width: int,
+    max_age_days: int,
 ) -> list[NewsItem]:
     root = ET.fromstring(raw_xml)
     ns = get_namespaces()
@@ -344,6 +375,7 @@ def parse_rss(
         raise RuntimeError("RSS sin nodo <channel>")
 
     items: list[NewsItem] = []
+    now = int(time.time())
 
     for item in channel.findall("item"):
         title = text_content(item.find("title"))
@@ -361,17 +393,13 @@ def parse_rss(
         content_node = item.find("content:encoded", ns)
         content_html = text_content(content_node)
 
-        if full_articles and url:
-            try:
-                article_page = fetch_url(url).decode("utf-8", errors="ignore")
-                extracted = extract_article_html(article_page)
-                if extracted:
-                    content_html = extracted
-            except Exception as exc:
-                print(f"[WARN] No se pudo leer artículo completo: {url} ({exc})", file=sys.stderr)
-
         author = text_content(item.find("dc:creator", ns)) or "AlterTime"
         published_at = parse_date(text_content(item.find("pubDate")))
+
+        if max_age_days > 0:
+            max_age_seconds = max_age_days * 86400
+            if now - published_at > max_age_seconds:
+                continue
 
         excerpt = strip_html(description)
         if len(excerpt) > 190:
@@ -503,9 +531,9 @@ def main() -> int:
     parser.add_argument("--output", default="Data/NewsData.lua")
     parser.add_argument("--media-dir", default="Media")
     parser.add_argument("--images", action="store_true")
-    parser.add_argument("--full-articles", action="store_true")
     parser.add_argument("--max-cover-width", type=int, default=768)
     parser.add_argument("--max-inline-width", type=int, default=760)
+    parser.add_argument("--max-age-days", type=int, default=7)
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
 
@@ -521,9 +549,9 @@ def main() -> int:
         args.limit,
         media_dir,
         args.images,
-        args.full_articles,
         args.max_cover_width,
         args.max_inline_width,
+        args.max_age_days,
     )
 
     lua = render_lua(items)
