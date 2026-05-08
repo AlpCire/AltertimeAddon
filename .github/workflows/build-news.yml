@@ -25,10 +25,10 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Generate news data from RSS
-        run: python tools/rss_to_news.py --output Data/NewsData.lua --media-dir Media --images
+        run: python tools/rss_to_news.py --output Data/NewsData.lua --media-dir Media --images --full-articles --limit 20
 
       - name: Package addon
-        run: python tools/package_addon.py --addon-dir . --version 0.3.0-alpha
+        run: python tools/package_addon.py --addon-dir . --folder-name AltertimeAddon --version 0.3.1-alpha
 
       - name: Commit generated content
         run: |
