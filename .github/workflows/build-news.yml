@@ -25,15 +25,15 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Generate news data from RSS
-        run: python tools/rss_to_news.py
+        run: python tools/rss_to_news.py --output Data/NewsData.lua --media-dir Media --images
 
       - name: Package addon
-        run: python tools/package_addon.py
+        run: python tools/package_addon.py --addon-dir . --version 0.3.0-alpha
 
       - name: Commit generated content
         run: |
           git config user.name "AlterTime Bot"
           git config user.email "bot@altertime.es"
-          git add Data Media dist AltertimeAddon.toc
+          git add Data Media dist AltertimeAddon.toc Core.lua
           git diff --cached --quiet || git commit -m "chore: update AlterTime news"
           git push
