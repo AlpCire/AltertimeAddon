@@ -1,7 +1,7 @@
 ## Interface: 120005
 ## Title: AlterTime News
 ## Notes: Lector de noticias de AlterTime dentro de World of Warcraft.
-## Author: AlterTime
+## Author: RoCkEt
 ## Version: 0.3.1-alpha
 ## SavedVariables: AlterTimeNewsDB
 
