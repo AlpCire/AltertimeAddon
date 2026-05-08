@@ -3,7 +3,7 @@ name: Build AlterTime News Addon
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 */6 * * *" # cada 6 horas
+    - cron: "0 */6 * * *"
 
 permissions:
   contents: write
@@ -36,21 +36,19 @@ jobs:
             --media-dir Media \
             --images \
             --limit 20 \
-            --max-age-days 14
+            --max-age-days 0
 
       - name: Package addon
         run: |
           python tools/package_addon.py \
             --addon-dir . \
+            --folder-name AltertimeAddon \
             --version "auto-${{ github.run_number }}"
 
       - name: Commit generated content
         run: |
           git config user.name "AlterTime Bot"
           git config user.email "bot@altertime.es"
-
           git add Data Media dist AltertimeAddon.toc Core.lua
-
           git diff --cached --quiet || git commit -m "chore: update AlterTime news"
-
           git push
