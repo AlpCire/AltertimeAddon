@@ -2,8 +2,8 @@ local ADDON_NAME, ns = ...
 
 local WIDTH = 1040
 local HEIGHT = 700
-local CARD_HEIGHT = 150
-local LOGO_PATH = "Interface\\AddOns\\AltertimeAddon\\Media\\AltertimeLogo.tga"
+local CARD_HEIGHT = 178
+local LOGO_PATH = "Interface\\AddOns\\AltertimeAddon\\Media\\AltertimeLogo2.tga"
 
 local function CreateFont(parent, size, flags)
     local fs = parent:CreateFontString(nil, "OVERLAY", "GameFontNormal")
@@ -11,6 +11,7 @@ local function CreateFont(parent, size, flags)
     fs:SetTextColor(0.92, 0.92, 0.92)
     fs:SetJustifyH("LEFT")
     fs:SetJustifyV("TOP")
+    fs:SetNonSpaceWrap(true)
     return fs
 end
 
@@ -36,6 +37,12 @@ end
 local function FormatDate(ts)
     if type(ts) ~= "number" then return "" end
     return date("%d/%m/%Y", ts)
+end
+
+local function TrimText(text, maxChars)
+    text = SafeText(text)
+    if #text <= maxChars then return text end
+    return string.sub(text, 1, maxChars - 3) .. "..."
 end
 
 local function CreatePanel(parent)
@@ -146,9 +153,16 @@ local function EnsureFrame()
     frame:SetBackdropColor(0.025, 0.04, 0.065, 0.98)
     frame:SetBackdropBorderColor(0.55, 0.12, 0.85, 1)
 
+    local logo = frame:CreateTexture(nil, "ARTWORK")
+    logo:SetPoint("TOPLEFT", 16, -12)
+    logo:SetSize(48, 48)
+    logo:SetTexture(LOGO_PATH)
+    logo:SetTexCoord(0, 1, 0, 1)
+    frame.logo = logo
+
     local title = CreateFont(frame, 24, "OUTLINE")
-    title:SetPoint("TOPLEFT", 18, -18)
-    title:SetText("AlterTime News")
+    title:SetPoint("LEFT", logo, "RIGHT", 10, 2)
+    title:SetText("Altertime.es")
     frame.title = title
 
     local count = CreateFont(frame, 12)
@@ -159,15 +173,15 @@ local function EnsureFrame()
     close:SetPoint("TOPRIGHT", -6, -6)
 
     local categoryFilter = CreateFrame("Frame", nil, frame, "UIDropDownMenuTemplate")
-    categoryFilter:SetPoint("TOPLEFT", 18, -46)
+    categoryFilter:SetPoint("TOPLEFT", 48, -70)
     frame.categoryFilter = categoryFilter
     frame.selectedCategory = "Todas"
     UIDropDownMenu_SetWidth(categoryFilter, 160)
     UIDropDownMenu_SetText(categoryFilter, "Todas")
 
     local search = CreateFrame("EditBox", nil, frame, "InputBoxTemplate")
-    search:SetSize(300, 24)
-    search:SetPoint("TOPLEFT", 230, -48)
+    search:SetSize(360, 24)
+    search:SetPoint("TOPLEFT", 320, -72)
     search:SetAutoFocus(false)
     search:SetScript("OnTextChanged", function()
         if ns.RenderList then
@@ -177,7 +191,7 @@ local function EnsureFrame()
     frame.search = search
 
     local searchLabel = CreateFont(frame, 11)
-    searchLabel:SetPoint("RIGHT", search, "LEFT", -8, 0)
+    searchLabel:SetPoint("RIGHT", search, "LEFT", -10, 0)
     searchLabel:SetText("Buscar:")
     frame.searchLabel = searchLabel
 
@@ -189,7 +203,7 @@ local function EnsureFrame()
     frame.back = back
 
     local scroll = CreateFrame("ScrollFrame", nil, frame, "UIPanelScrollFrameTemplate")
-    scroll:SetPoint("TOPLEFT", 18, -118)
+    scroll:SetPoint("TOPLEFT", 18, -124)
     scroll:SetPoint("BOTTOMRIGHT", -38, 18)
 
     local content = CreateFrame("Frame", nil, scroll)
@@ -235,7 +249,7 @@ function ns.RenderList()
 
             local imageBox = CreateFrame("Frame", nil, card)
             imageBox:SetPoint("TOPLEFT", 12, -12)
-            imageBox:SetSize(300, CARD_HEIGHT - 24)
+            imageBox:SetSize(320, CARD_HEIGHT - 24)
 
             local tex = imageBox:CreateTexture(nil, "ARTWORK")
             tex:SetAllPoints(imageBox)
@@ -243,26 +257,30 @@ function ns.RenderList()
             tex:SetTexture(item.cover or LOGO_PATH)
 
             local title = CreateFont(card, 20, "OUTLINE")
-            title:SetPoint("TOPLEFT", 330, -20)
+            title:SetPoint("TOPLEFT", 352, -18)
             title:SetPoint("RIGHT", -18, 0)
-            title:SetText(SafeText(item.title))
+            title:SetHeight(54)
+            title:SetText(TrimText(item.title, 145))
 
             local excerpt = CreateFont(card, 13)
-            excerpt:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -12)
+            excerpt:SetPoint("TOPLEFT", 352, -78)
             excerpt:SetPoint("RIGHT", -18, 0)
-            excerpt:SetText(SafeText(item.excerpt))
+            excerpt:SetHeight(52)
+            excerpt:SetText(TrimText(item.excerpt, 210))
+
+            local badge = CreateFont(card, 11, "OUTLINE")
+            badge:SetPoint("BOTTOMLEFT", 352, 16)
+            badge:SetText(ns.IsSeen(item.id) and "|cffaaaaaaVISTA|r" or "|cffd36cffNUEVA|r")
 
             local meta = CreateFont(card, 11)
-            meta:SetPoint("BOTTOMRIGHT", -18, 18)
-            meta:SetText(table.concat({
+            meta:SetPoint("BOTTOMRIGHT", -18, 16)
+            meta:SetWidth(520)
+            meta:SetJustifyH("RIGHT")
+            meta:SetText(TrimText(table.concat({
                 SafeText(item.author),
                 FormatDate(item.publishedAt),
                 table.concat(item.categories or {}, ", "),
-            }, "  •  "))
-
-            local badge = CreateFont(card, 11, "OUTLINE")
-            badge:SetPoint("BOTTOMLEFT", 330, 18)
-            badge:SetText(ns.IsSeen(item.id) and "|cffaaaaaaVISTA|r" or "|cffd36cffNUEVA|r")
+            }, "  •  "), 120))
 
             card:SetScript("OnMouseUp", function()
                 ns.MarkSeen(item.id)
