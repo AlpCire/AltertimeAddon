@@ -1,9 +1,14 @@
 ## Interface: 120005
 ## Title: AlterTime News
-## Notes: Lector de noticias de AlterTime dentro de World of Warcraft.
+## Notes: Noticias de AlterTime dentro de World of Warcraft.
 ## Author: RoCkEt
-## Version: auto-15
-## SavedVariables: AlterTimeNewsDB
+## Version: 0.4.2-alpha
+## SavedVariables: AltertimeAddonDB
+
+Libs\LibStub\LibStub.lua
+Libs\CallbackHandler-1.0\CallbackHandler-1.0.lua
+Libs\LibDataBroker-1.1\LibDataBroker-1.1.lua
+Libs\LibDBIcon-1.0\LibDBIcon-1.0.lua
 
 Core.lua
 Data\NewsData.lua
