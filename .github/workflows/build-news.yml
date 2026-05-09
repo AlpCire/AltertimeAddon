@@ -27,7 +27,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          pip install Pillow
+          pip install Pillow beautifulsoup4
 
       - name: Generate news from AlterTime homepage
         run: |
