@@ -1,4 +1,4 @@
-name: Build AlterTime News Addon
+name: Build and Upload AlterTime News Addon
 
 on:
   workflow_dispatch:
@@ -46,10 +46,18 @@ jobs:
             --folder-name AltertimeAddon \
             --version "auto-${{ github.run_number }}"
 
+      - name: Upload to CurseForge
+        env:
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          CF_PROJECT_ID: ${{ secrets.CF_PROJECT_ID }}
+          CF_RELEASE_TYPE: alpha
+        run: |
+          python tools/upload_curseforge.py
+
       - name: Commit generated content
         run: |
           git config user.name "AlterTime Bot"
           git config user.email "bot@altertime.es"
-          git add Data Media dist AltertimeAddon.toc Core.lua
+          git add Data Media AltertimeAddon.toc Core.lua
           git diff --cached --quiet || git commit -m "chore: update AlterTime news"
           git push
