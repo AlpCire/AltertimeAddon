@@ -1,286 +1,356 @@
 local ADDON_NAME, ns = ...
 
-local MAIN_WIDTH, MAIN_HEIGHT = 1040, 680
-local CARD_HEIGHT = 142
+local WIDTH = 1040
+local HEIGHT = 700
 
-local mainFrame
-local listFrame
-local articleFrame
-local searchBox
-local categoryDropDown
-local resultText
+local CARD_HEIGHT = 150
+local PADDING = 18
 
-local function ShowList()
-    articleFrame:Hide()
-    listFrame:Show()
+local function CreateFont(parent, size, flags)
+    local fs = parent:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    fs:SetFont("Fonts\\FRIZQT__.TTF", size or 12, flags or "")
+    fs:SetTextColor(0.92, 0.92, 0.92)
+    fs:SetJustifyH("LEFT")
+    fs:SetJustifyV("TOP")
+    return fs
 end
 
-local function AddVerticalSpace(y, amount)
-    return y - (amount or 12)
+local function ClearChildren(frame)
+    if not frame.children then return end
+    for _, child in ipairs(frame.children) do
+        child:Hide()
+        child:SetParent(nil)
+    end
+    wipe(frame.children)
 end
 
-local function ShowArticle(news)
-    if type(news) ~= "table" then return end
+local function AddChild(parent, child)
+    parent.children = parent.children or {}
+    table.insert(parent.children, child)
+end
 
-    ns.MarkSeen(news.id)
+local function SafeText(value)
+    if value == nil then return "" end
+    return tostring(value)
+end
 
-    listFrame:Hide()
-    articleFrame:Show()
-    ns.WipeChildren(articleFrame.content)
+local function FormatDate(ts)
+    if type(ts) ~= "number" then return "" end
+    return date("%d/%m/%Y", ts)
+end
 
-    local y = -8
+local function CreatePanel(parent)
+    local panel = CreateFrame("Frame", nil, parent, "BackdropTemplate")
+    panel:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8X8",
+        edgeFile = "Interface\\Buttons\\WHITE8X8",
+        edgeSize = 1,
+    })
+    panel:SetBackdropColor(0.035, 0.055, 0.085, 0.96)
+    panel:SetBackdropBorderColor(0.55, 0.12, 0.85, 0.95)
+    return panel
+end
 
-    local back = CreateFrame("Button", nil, articleFrame.content, "UIPanelButtonTemplate")
-    back:SetText("← Volver")
-    back:SetSize(110, 26)
-    back:SetPoint("TOPLEFT", 8, y)
+local function CreateButton(parent, text)
+    local btn = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
+    btn:SetText(text)
+    btn:SetSize(110, 24)
+    return btn
+end
+
+local function SetTextureSafe(texture, path)
+    if not path or path == "" then
+        texture:Hide()
+        return false
+    end
+
+    texture:SetTexture(path)
+    texture:SetTexCoord(0, 1, 0, 1)
+    texture:Show()
+    return true
+end
+
+local function EnsureFrame()
+    if ns.MainFrame then return ns.MainFrame end
+
+    local frame = CreateFrame("Frame", "AlterTimeNewsFrame", UIParent, "BackdropTemplate")
+    frame:SetSize(WIDTH, HEIGHT)
+    frame:SetPoint("CENTER")
+    frame:SetMovable(true)
+    frame:EnableMouse(true)
+    frame:RegisterForDrag("LeftButton")
+    frame:SetScript("OnDragStart", frame.StartMoving)
+    frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
+    frame:SetClampedToScreen(true)
+
+    frame:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8X8",
+        edgeFile = "Interface\\Buttons\\WHITE8X8",
+        edgeSize = 1,
+    })
+    frame:SetBackdropColor(0.025, 0.04, 0.065, 0.98)
+    frame:SetBackdropBorderColor(0.55, 0.12, 0.85, 1)
+
+    local title = CreateFont(frame, 24, "OUTLINE")
+    title:SetPoint("TOPLEFT", 18, -18)
+    title:SetText("AlterTime News")
+    frame.title = title
+
+    local count = CreateFont(frame, 12, "")
+    count:SetPoint("LEFT", title, "RIGHT", 18, -2)
+    frame.count = count
+
+    local close = CreateFrame("Button", nil, frame, "UIPanelCloseButton")
+    close:SetPoint("TOPRIGHT", -6, -6)
+
+    local back = CreateButton(frame, "Volver")
+    back:SetPoint("TOPLEFT", 18, -86)
     back:SetScript("OnClick", function()
-        BuildList()
-        ShowList()
+        ns.RenderList()
     end)
-    y = AddVerticalSpace(y, 42)
+    frame.back = back
 
-    local title = ns.CreateFont(articleFrame.content, 24, "OUTLINE")
-    title:SetPoint("TOPLEFT", 8, y)
-    title:SetPoint("RIGHT", articleFrame.content, "RIGHT", -24, 0)
-    title:SetText(news.title or "Sin título")
-    title:SetWordWrap(true)
-    y = AddVerticalSpace(y, math.max(64, title:GetStringHeight() + 18))
-
-    local meta = ns.CreateFont(articleFrame.content, 12)
-    meta:SetTextColor(0.72, 0.76, 0.84)
-    meta:SetPoint("TOPLEFT", 8, y)
-    meta:SetText((news.author or "AlterTime") .. "  •  " .. ns.FormatDate(news.publishedAt) .. "  •  " .. ns.CategoriesToText(news.categories))
-    y = AddVerticalSpace(y, 34)
-
-    if news.cover then
-        local cover = articleFrame.content:CreateTexture(nil, "ARTWORK")
-        cover:SetTexture(news.cover)
-        cover:SetSize(760, 300)
-        cover:SetPoint("TOP", articleFrame.content, "TOP", 0, y)
-        cover:SetTexCoord(0, 1, 0, 1)
-        y = AddVerticalSpace(y, 320)
-    end
-
-    for _, block in ipairs(news.body or {}) do
-        if block.type == "heading" then
-            local h = ns.CreateFont(articleFrame.content, 20, "OUTLINE")
-            h:SetPoint("TOPLEFT", 8, y)
-            h:SetPoint("RIGHT", articleFrame.content, "RIGHT", -24, 0)
-            h:SetText(block.text or "")
-            y = AddVerticalSpace(y, math.max(34, h:GetStringHeight() + 14))
-        elseif block.type == "bullet" then
-            local b = ns.CreateFont(articleFrame.content, 15)
-            b:SetPoint("TOPLEFT", 28, y)
-            b:SetPoint("RIGHT", articleFrame.content, "RIGHT", -24, 0)
-            b:SetText("• " .. (block.text or ""))
-            b:SetWordWrap(true)
-            y = AddVerticalSpace(y, math.max(28, b:GetStringHeight() + 12))
-        elseif block.type == "image" and block.path then
-            local tex = articleFrame.content:CreateTexture(nil, "ARTWORK")
-            tex:SetTexture(block.path)
-            tex:SetSize(block.width or 720, block.height or 360)
-            tex:SetPoint("TOP", articleFrame.content, "TOP", 0, y)
-            y = AddVerticalSpace(y, (block.height or 360) + 20)
-        else
-            local p = ns.CreateFont(articleFrame.content, 15)
-            p:SetPoint("TOPLEFT", 8, y)
-            p:SetPoint("RIGHT", articleFrame.content, "RIGHT", -24, 0)
-            p:SetText(block.text or "")
-            p:SetWordWrap(true)
-            y = AddVerticalSpace(y, math.max(32, p:GetStringHeight() + 16))
-        end
-    end
-
-    local linkLabel = ns.CreateFont(articleFrame.content, 14, "OUTLINE")
-    linkLabel:SetPoint("TOPLEFT", 8, y - 10)
-    linkLabel:SetText("Enlace original:")
-    y = AddVerticalSpace(y, 38)
-
-    local edit = ns.CreateCopyBox(articleFrame.content, news.url or "")
-    edit:SetPoint("TOPLEFT", 8, y)
-    edit:SetPoint("RIGHT", articleFrame.content, "RIGHT", -88, 0)
-
-    local copy = CreateFrame("Button", nil, articleFrame.content, "UIPanelButtonTemplate")
-    copy:SetText("Copiar")
-    copy:SetSize(76, 24)
-    copy:SetPoint("LEFT", edit, "RIGHT", 8, 0)
-    copy:SetScript("OnClick", function()
-        edit:SetFocus()
-        edit:HighlightText()
+    local search = CreateFrame("EditBox", nil, frame, "InputBoxTemplate")
+    search:SetSize(300, 24)
+    search:SetPoint("TOPLEFT", 230, -48)
+    search:SetAutoFocus(false)
+    search:SetScript("OnTextChanged", function()
+        ns.RenderList()
     end)
+    frame.search = search
 
-    y = AddVerticalSpace(y, 56)
-    articleFrame.content:SetHeight(math.abs(y) + 40)
-end
+    local searchLabel = CreateFont(frame, 11)
+    searchLabel:SetPoint("RIGHT", search, "LEFT", -8, 0)
+    searchLabel:SetText("Buscar:")
+    frame.searchLabel = searchLabel
 
-function BuildList()
-    if not listFrame or not listFrame.content then return end
-    ns.WipeChildren(listFrame.content)
-
-    local news = ns.GetFilteredNews()
-    if resultText then
-        resultText:SetText(string.format("%d noticia%s", #news, #news == 1 and "" or "s"))
-    end
-
-    if #news == 0 then
-        local empty = ns.CreateFont(listFrame.content, 16)
-        empty:SetPoint("TOPLEFT", 16, -18)
-        empty:SetText("No hay noticias para el filtro actual.")
-        listFrame.content:SetHeight(80)
-        return
-    end
-
-    for i, item in ipairs(news) do
-        local card = CreateFrame("Button", nil, listFrame.content, "BackdropTemplate")
-        card:SetSize(MAIN_WIDTH - 92, CARD_HEIGHT)
-        card:SetPoint("TOPLEFT", 12, -12 - ((i - 1) * (CARD_HEIGHT + 14)))
-        ns.SetBackdrop(card, "#151b24", ns.IsSeen(item.id) and "#3d4655" or "#7c2bbd")
-
-        local cover = card:CreateTexture(nil, "ARTWORK")
-        cover:SetPoint("TOPLEFT", 1, -1)
-        cover:SetPoint("BOTTOMLEFT", 1, 1)
-        cover:SetWidth(330)
-        cover:SetTexture(item.cover or "Interface\\Collections\\CollectionsBackgroundTile")
-        cover:SetAlpha(item.cover and 0.8 or 0.35)
-
-        local title = ns.CreateFont(card, 21, "OUTLINE")
-        title:SetPoint("TOPLEFT", card, "TOPLEFT", 360, -22)
-        title:SetPoint("RIGHT", card, "RIGHT", -18, 0)
-        title:SetText(item.title or "Sin título")
-        title:SetWordWrap(true)
-
-        local excerpt = ns.CreateFont(card, 14)
-        excerpt:SetTextColor(0.82, 0.84, 0.90)
-        excerpt:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -10)
-        excerpt:SetPoint("RIGHT", card, "RIGHT", -18, 0)
-        excerpt:SetText(item.excerpt or "")
-
-        local badge = ns.CreateFont(card, 12, "OUTLINE")
-        badge:SetPoint("BOTTOMLEFT", card, "BOTTOMLEFT", 360, 18)
-        badge:SetText(ns.IsSeen(item.id) and "VISTA" or "NUEVA")
-        badge:SetTextColor(ns.IsSeen(item.id) and 0.55 or 0.80, ns.IsSeen(item.id) and 0.62 or 0.45, ns.IsSeen(item.id) and 0.72 or 1.0)
-
-        local meta = ns.CreateFont(card, 12)
-        meta:SetTextColor(0.78, 0.80, 0.86)
-        meta:SetPoint("BOTTOMRIGHT", card, "BOTTOMRIGHT", -18, 18)
-        meta:SetJustifyH("RIGHT")
-        meta:SetText((item.author or "AlterTime") .. "  •  " .. ns.FormatDate(item.publishedAt) .. "  •  " .. ns.CategoriesToText(item.categories))
-
-        card:SetScript("OnEnter", function(self) self:SetBackdropBorderColor(ns.RGB("#b85cff")) end)
-        card:SetScript("OnLeave", function(self) self:SetBackdropBorderColor(ns.RGB(ns.IsSeen(item.id) and "#3d4655" or "#7c2bbd")) end)
-        card:SetScript("OnClick", function() ShowArticle(item) end)
-    end
-
-    listFrame.content:SetHeight(math.max(1, (#news * (CARD_HEIGHT + 14)) + 30))
-end
-
-local function CreateScroll(parent)
-    local scroll = CreateFrame("ScrollFrame", nil, parent, "UIPanelScrollFrameTemplate")
-    scroll:SetPoint("TOPLEFT", 16, -92)
-    scroll:SetPoint("BOTTOMRIGHT", -36, 18)
+    local scroll = CreateFrame("ScrollFrame", nil, frame, "UIPanelScrollFrameTemplate")
+    scroll:SetPoint("TOPLEFT", 18, -118)
+    scroll:SetPoint("BOTTOMRIGHT", -38, 18)
 
     local content = CreateFrame("Frame", nil, scroll)
-    content:SetSize(1, 1)
+    content:SetSize(WIDTH - 74, 1)
+    content.children = {}
     scroll:SetScrollChild(content)
-    scroll.content = content
-    return scroll
+
+    frame.scroll = scroll
+    frame.content = content
+
+    ns.MainFrame = frame
+    return frame
 end
 
-local function RebuildFilters()
-    local db = ns.GetDB()
-    if searchBox then
-        db.settings.search = searchBox:GetText() or ""
-    end
-    BuildList()
+local function GetNews()
+    return ns.News or {}
 end
 
-local function CreateCategoryDropdown(parent)
-    local dropdown = CreateFrame("Frame", "AlterTimeNewsCategoryDropDown", parent, "UIDropDownMenuTemplate")
-    UIDropDownMenu_SetWidth(dropdown, 150)
-    UIDropDownMenu_Initialize(dropdown, function(self, level)
-        local db = ns.GetDB()
-        for _, category in ipairs(ns.GetCategories()) do
-            local info = UIDropDownMenu_CreateInfo()
-            info.text = category
-            info.checked = db.settings.selectedCategory == category
-            info.func = function()
-                db.settings.selectedCategory = category
-                UIDropDownMenu_SetText(dropdown, category)
-                BuildList()
-            end
-            UIDropDownMenu_AddButton(info, level)
+local function MatchesSearch(item, query)
+    if not query or query == "" then return true end
+    query = string.lower(query)
+
+    local haystack = table.concat({
+        SafeText(item.title),
+        SafeText(item.excerpt),
+        SafeText(item.author),
+        table.concat(item.categories or {}, " "),
+    }, " ")
+
+    return string.find(string.lower(haystack), query, 1, true) ~= nil
+end
+
+function ns.RenderList()
+    local frame = EnsureFrame()
+    frame.back:Hide()
+    frame.search:Show()
+    frame.searchLabel:Show()
+
+    ClearChildren(frame.content)
+
+    local news = GetNews()
+    frame.count:SetText(#news .. " noticias")
+
+    local y = 0
+    local query = frame.search:GetText()
+
+    for _, item in ipairs(news) do
+        if MatchesSearch(item, query) then
+            local card = CreatePanel(frame.content)
+            card:SetPoint("TOPLEFT", 0, -y)
+            card:SetSize(WIDTH - 92, CARD_HEIGHT)
+            AddChild(frame.content, card)
+
+            local imageBox = CreateFrame("Frame", nil, card)
+            imageBox:SetPoint("TOPLEFT", 12, -12)
+            imageBox:SetSize(300, CARD_HEIGHT - 24)
+
+            local tex = imageBox:CreateTexture(nil, "ARTWORK")
+            tex:SetAllPoints(imageBox)
+            tex:SetTexCoord(0, 1, 0, 1)
+            tex:SetTexture(item.cover or "Interface\\AddOns\\AltertimeAddon\\Media\\AltertimeLogo.blp")
+
+            local title = CreateFont(card, 20, "OUTLINE")
+            title:SetPoint("TOPLEFT", 330, -20)
+            title:SetPoint("RIGHT", -18, 0)
+            title:SetText(SafeText(item.title))
+
+            local excerpt = CreateFont(card, 13, "")
+            excerpt:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -12)
+            excerpt:SetPoint("RIGHT", -18, 0)
+            excerpt:SetText(SafeText(item.excerpt))
+
+            local meta = CreateFont(card, 11, "")
+            meta:SetPoint("BOTTOMRIGHT", -18, 18)
+            meta:SetText(table.concat({
+                SafeText(item.author),
+                FormatDate(item.publishedAt),
+                table.concat(item.categories or {}, ", "),
+            }, "  •  "))
+
+            local badge = CreateFont(card, 11, "OUTLINE")
+            badge:SetPoint("BOTTOMLEFT", 330, 18)
+            badge:SetText(ns.IsSeen(item.id) and "|cffaaaaaaVISTA|r" or "|cffd36cffNUEVA|r")
+
+            card:SetScript("OnMouseUp", function()
+                ns.MarkSeen(item.id)
+                ns.RenderArticle(item)
+            end)
+
+            y = y + CARD_HEIGHT + 14
         end
-    end)
-    UIDropDownMenu_SetText(dropdown, ns.GetDB().settings.selectedCategory or "Todas")
-    return dropdown
-end
-
-local function CreateMainFrame()
-    if mainFrame then return mainFrame end
-
-    mainFrame = CreateFrame("Frame", "AlterTimeNewsMainFrame", UIParent, "BackdropTemplate")
-    mainFrame:SetSize(MAIN_WIDTH, MAIN_HEIGHT)
-    mainFrame:SetPoint("CENTER")
-    mainFrame:SetFrameStrata("DIALOG")
-    mainFrame:EnableMouse(true)
-    mainFrame:SetMovable(true)
-    mainFrame:RegisterForDrag("LeftButton")
-    mainFrame:SetScript("OnDragStart", mainFrame.StartMoving)
-    mainFrame:SetScript("OnDragStop", mainFrame.StopMovingOrSizing)
-    ns.SetBackdrop(mainFrame, "#111722", "#8e44ad")
-    mainFrame:Hide()
-
-    local title = ns.CreateFont(mainFrame, 22, "OUTLINE")
-    title:SetPoint("TOPLEFT", 18, -16)
-    title:SetText("AlterTime News")
-
-    resultText = ns.CreateFont(mainFrame, 12)
-    resultText:SetTextColor(0.72, 0.76, 0.84)
-    resultText:SetPoint("LEFT", title, "RIGHT", 18, 0)
-
-    categoryDropDown = CreateCategoryDropdown(mainFrame)
-    categoryDropDown:SetPoint("TOPLEFT", 12, -46)
-
-    searchBox = CreateFrame("EditBox", nil, mainFrame, "InputBoxTemplate")
-    searchBox:SetSize(260, 28)
-    searchBox:SetPoint("LEFT", categoryDropDown, "RIGHT", 8, 2)
-    searchBox:SetAutoFocus(false)
-    searchBox:SetText(ns.GetDB().settings.search or "")
-    searchBox:SetScript("OnTextChanged", function(self)
-        ns.GetDB().settings.search = self:GetText() or ""
-        BuildList()
-    end)
-    searchBox:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
-
-    local placeholder = ns.CreateFont(mainFrame, 12)
-    placeholder:SetTextColor(0.45, 0.48, 0.55)
-    placeholder:SetPoint("LEFT", searchBox, "LEFT", 8, 0)
-    placeholder:SetText("Buscar...")
-    searchBox:SetScript("OnEditFocusGained", function() placeholder:Hide() end)
-    searchBox:SetScript("OnEditFocusLost", function(self)
-        if (self:GetText() or "") == "" then placeholder:Show() end
-    end)
-    if (searchBox:GetText() or "") ~= "" then placeholder:Hide() end
-
-    local close = CreateFrame("Button", nil, mainFrame, "UIPanelCloseButton")
-    close:SetPoint("TOPRIGHT", -4, -4)
-
-    listFrame = CreateScroll(mainFrame)
-    articleFrame = CreateScroll(mainFrame)
-    articleFrame:Hide()
-
-    BuildList()
-    return mainFrame
-end
-
-function ns.ToggleMainFrame()
-    local f = CreateMainFrame()
-    if f:IsShown() then
-        f:Hide()
-    else
-        BuildList()
-        ShowList()
-        f:Show()
     end
+
+    frame.content:SetHeight(math.max(y, 1))
+end
+
+local function AddTextBlock(parent, y, blockType, text)
+    local size = 14
+    local flags = ""
+
+    if blockType == "heading" then
+        size = 21
+        flags = "OUTLINE"
+    elseif blockType == "bullet" then
+        text = "• " .. SafeText(text)
+    end
+
+    local fs = CreateFont(parent, size, flags)
+    fs:SetPoint("TOPLEFT", 18, -y)
+    fs:SetWidth(WIDTH - 130)
+    fs:SetText(SafeText(text))
+
+    AddChild(parent, fs)
+
+    local height = fs:GetStringHeight()
+    return y + math.max(height, size + 8) + 14
+end
+
+local function AddImageBlock(parent, y, block)
+    local path = block.path
+    if not path or path == "" then
+        return y
+    end
+
+    local maxWidth = WIDTH - 150
+    local sourceWidth = tonumber(block.width) or maxWidth
+    local sourceHeight = tonumber(block.height) or 360
+
+    if sourceWidth <= 0 then sourceWidth = maxWidth end
+    if sourceHeight <= 0 then sourceHeight = 360 end
+
+    local ratio = sourceHeight / sourceWidth
+    local displayWidth = math.min(maxWidth, sourceWidth)
+    local displayHeight = math.floor(displayWidth * ratio)
+
+    displayHeight = math.min(displayHeight, 460)
+
+    local holder = CreateFrame("Frame", nil, parent)
+    holder:SetPoint("TOPLEFT", 18, -y)
+    holder:SetSize(displayWidth, displayHeight)
+    AddChild(parent, holder)
+
+    local tex = holder:CreateTexture(nil, "ARTWORK")
+    tex:SetAllPoints(holder)
+    tex:SetTexture(path)
+    tex:SetTexCoord(0, 1, 0, 1)
+
+    return y + displayHeight + 20
+end
+
+function ns.RenderArticle(item)
+    local frame = EnsureFrame()
+    frame.back:Show()
+    frame.search:Hide()
+    frame.searchLabel:Hide()
+
+    ClearChildren(frame.content)
+
+    frame.count:SetText(#GetNews() .. " noticias")
+
+    local y = 0
+
+    local title = CreateFont(frame.content, 25, "OUTLINE")
+    title:SetPoint("TOPLEFT", 18, -y)
+    title:SetWidth(WIDTH - 130)
+    title:SetText(SafeText(item.title))
+    AddChild(frame.content, title)
+    y = y + math.max(title:GetStringHeight(), 34) + 16
+
+    local meta = CreateFont(frame.content, 12)
+    meta:SetPoint("TOPLEFT", 18, -y)
+    meta:SetWidth(WIDTH - 130)
+    meta:SetText(table.concat({
+        SafeText(item.author),
+        FormatDate(item.publishedAt),
+        table.concat(item.categories or {}, ", "),
+    }, "  •  "))
+    AddChild(frame.content, meta)
+    y = y + 30
+
+    if item.cover then
+        y = AddImageBlock(frame.content, y, {
+            path = item.cover,
+            width = 768,
+            height = 432,
+        })
+    end
+
+    for _, block in ipairs(item.body or {}) do
+        if block.type == "image" then
+            y = AddImageBlock(frame.content, y, block)
+        else
+            y = AddTextBlock(frame.content, y, block.type, block.text)
+        end
+    end
+
+    y = y + 20
+    local linkLabel = CreateFont(frame.content, 13, "OUTLINE")
+    linkLabel:SetPoint("TOPLEFT", 18, -y)
+    linkLabel:SetText("Enlace original:")
+    AddChild(frame.content, linkLabel)
+    y = y + 24
+
+    local edit = CreateFrame("EditBox", nil, frame.content, "InputBoxTemplate")
+    edit:SetPoint("TOPLEFT", 18, -y)
+    edit:SetSize(WIDTH - 170, 24)
+    edit:SetAutoFocus(false)
+    edit:SetText(SafeText(item.url))
+    AddChild(frame.content, edit)
+
+    local copy = CreateButton(frame.content, "Copiar")
+    copy:SetPoint("LEFT", edit, "RIGHT", 8, 0)
+    copy:SetScript("OnClick", function()
+        edit:HighlightText()
+        edit:SetFocus()
+    end)
+    AddChild(frame.content, copy)
+
+    y = y + 44
+    frame.content:SetHeight(math.max(y, HEIGHT - 150))
+    frame.scroll:SetVerticalScroll(0)
+end
+
+function ns.ShowMainFrame()
+    local frame = EnsureFrame()
+    frame:Show()
+    ns.RenderList()
 end
