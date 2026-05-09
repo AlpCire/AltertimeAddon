@@ -1,7 +1,7 @@
 local ADDON_NAME, ns = ...
 
 ns.ADDON_NAME = ADDON_NAME
-ns.VERSION = "auto-14"
+ns.VERSION = "auto-15"
 ns.DATA_VERSION = 1
 
 local DEFAULT_DB = {
