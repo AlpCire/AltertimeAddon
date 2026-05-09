@@ -21,17 +21,9 @@ except Exception:
     Image = None
 
 
-USER_AGENT = "AlterTimeAddonGenerator/0.4.1 (+https://altertime.es)"
+USER_AGENT = "AlterTimeAddonGenerator/0.4.3 (+https://altertime.es)"
 
-WOW_CATEGORY_KEYWORDS = {
-    "retail", "classic", "midnight", "world of warcraft", "warcraft", "wow",
-    "addons", "ayuda y addons", "mazmorras", "bandas", "coleccionables",
-    "monturas", "reino de pruebas", "noticias blizzard", "blizzard",
-}
-
-EXCLUDED_KEYWORDS = {
-    "diablo", "hearthstone", "rumble", "overwatch", "starcraft",
-}
+EXCLUDED_HOME_KEYWORDS = set()
 
 
 @dataclass
@@ -57,6 +49,7 @@ class NewsItem:
     cover: str | None = None
     body: list[dict] = field(default_factory=list)
     cover_url: str | None = None
+    inline_image_urls: list[str] = field(default_factory=list)
 
 
 def fetch_url(url: str, timeout: int = 25) -> bytes:
@@ -125,16 +118,6 @@ def parse_relative_time(value: str) -> int:
     return now
 
 
-def is_wow_item(title: str, categories: list[str]) -> bool:
-    haystack = (title + " " + " ".join(categories)).lower()
-
-    if any(excluded in haystack for excluded in EXCLUDED_KEYWORDS):
-        if not any(force in haystack for force in ("wow", "warcraft", "world of warcraft", "blizzard")):
-            return False
-
-    return any(keyword in haystack for keyword in WOW_CATEGORY_KEYWORDS)
-
-
 def image_extension(url: str) -> str:
     path = urllib.parse.urlparse(url).path
     ext = Path(path).suffix.lower()
@@ -151,7 +134,8 @@ def is_bad_image_url(url: str) -> bool:
     bad = [
         "avatar", "profile", "logo", "icon", "favicon", "emoji",
         "user", "placeholder", "login", "discord", "twitter", "x.com",
-        "facebook", "youtube", "twitch",
+        "facebook", "youtube", "twitch", "calender", "calendar",
+        "tag", "flag", "wowtoken", "blizzbucks",
     ]
     return any(x in lower for x in bad)
 
@@ -159,7 +143,6 @@ def is_bad_image_url(url: str) -> bool:
 def resize_image(img: Image.Image, max_width: int) -> Image.Image:
     if img.width <= max_width:
         return img
-
     ratio = max_width / img.width
     return img.resize((max_width, max(1, int(img.height * ratio))), Image.LANCZOS)
 
@@ -171,6 +154,8 @@ def download_and_convert_image(
     folder: str,
     index: int,
     max_width: int,
+    min_width: int = 300,
+    min_height: int = 120,
 ) -> ImageAsset | None:
     if not url or is_bad_image_url(url):
         return None
@@ -199,6 +184,11 @@ def download_and_convert_image(
     try:
         with Image.open(raw_path) as img:
             img = img.convert("RGBA")
+
+            if img.width < min_width or img.height < min_height:
+                print(f"[SKIP IMG] Imagen pequeña: {url} ({img.width}x{img.height})")
+                return None
+
             img = resize_image(img, max_width)
             width, height = img.size
             img.save(tga_path)
@@ -236,34 +226,50 @@ def get_meta_image(soup: BeautifulSoup, base_url: str) -> str | None:
     return None
 
 
-def extract_article_images(soup: BeautifulSoup, base_url: str) -> list[str]:
-    urls: list[str] = []
+def should_stop_article_text(text: str) -> bool:
+    lower = text_clean(text).lower()
+    stop_markers = [
+        "fuente:",
+        "compartir",
+        "mercado negro",
+        "ficha de wow",
+        "afijos míticas",
+        "redes sociales",
+        "términos y condiciones",
+        "privacy policy",
+        "por favor, desactiva tu adblock",
+    ]
+    return any(marker in lower for marker in stop_markers)
 
-    candidates = soup.select("article img, main img, .article img, .post img, .content img")
 
-    if not candidates:
-        candidates = soup.find_all("img")
+def should_skip_text(text: str) -> bool:
+    lower = text_clean(text).lower()
 
-    for img in candidates:
-        src = (
-            img.get("src")
-            or img.get("data-src")
-            or img.get("data-lazy-src")
-            or img.get("data-original")
-        )
+    if len(lower) < 3:
+        return True
 
-        if not src:
-            continue
+    bad = [
+        "loading...",
+        "creación de contenido",
+        "inicia sesión",
+        "adblock",
+        "privacy policy",
+        "términos y condiciones",
+        "realizado por raider.io",
+        "hecho con",
+        "copyright",
+    ]
 
-        url = absolutize(src, base_url)
+    return any(x in lower for x in bad)
 
-        if is_bad_image_url(url):
-            continue
 
-        if url not in urls:
-            urls.append(url)
-
-    return urls
+def find_article_h1(soup: BeautifulSoup) -> object | None:
+    h1s = soup.find_all("h1")
+    for h1 in h1s:
+        text = text_clean(h1.get_text(" "))
+        if len(text) > 20 and not should_skip_text(text):
+            return h1
+    return None
 
 
 def extract_article_body(article_html: str, article_url: str) -> tuple[str, str, list[dict], list[str]]:
@@ -272,34 +278,44 @@ def extract_article_body(article_html: str, article_url: str) -> tuple[str, str,
     for node in soup.select("script, style, nav, header, footer, iframe, noscript, form"):
         node.decompose()
 
-    title = ""
-    h1 = soup.find("h1")
-    if h1:
-        title = text_clean(h1.get_text(" "))
-
     cover_url = get_meta_image(soup, article_url)
 
-    article_root = (
-        soup.find("article")
-        or soup.find("main")
-        or soup.select_one(".article")
-        or soup.select_one(".post")
-        or soup.select_one(".content")
-        or soup.body
-        or soup
-    )
+    h1 = find_article_h1(soup)
+    if not h1:
+        return "", cover_url or "", [], []
 
+    title = text_clean(h1.get_text(" "))
     blocks: list[dict] = []
+    inline_images: list[str] = []
     seen_text: set[str] = set()
+    collecting = True
 
-    for node in article_root.find_all(["h2", "h3", "p", "li"], recursive=True):
-        text = text_clean(node.get_text(" "))
+    for node in h1.find_all_next(["h2", "h3", "p", "li", "img"]):
+        if not collecting:
+            break
 
-        if not text or len(text) < 3:
+        if node.name == "img":
+            src = (
+                node.get("src")
+                or node.get("data-src")
+                or node.get("data-lazy-src")
+                or node.get("data-original")
+            )
+
+            if src:
+                url = absolutize(src, article_url)
+                if not is_bad_image_url(url) and url != cover_url and url not in inline_images:
+                    inline_images.append(url)
+
             continue
 
-        lower = text.lower()
-        if any(bad in lower for bad in ["cookie", "privacy", "javascript", "discord", "newsletter"]):
+        text = text_clean(node.get_text(" "))
+
+        if should_stop_article_text(text):
+            collecting = False
+            break
+
+        if should_skip_text(text):
             continue
 
         if text in seen_text:
@@ -314,12 +330,10 @@ def extract_article_body(article_html: str, article_url: str) -> tuple[str, str,
         else:
             blocks.append({"type": "paragraph", "text": text})
 
-    article_images = extract_article_images(soup, article_url)
+        if len(blocks) >= 80:
+            break
 
-    if cover_url:
-        article_images = [u for u in article_images if u != cover_url]
-
-    return title, cover_url or "", blocks[:45], article_images[:3]
+    return title, cover_url or "", blocks, inline_images[:4]
 
 
 def parse_homepage(home_html: str, base_url: str, limit: int, max_age_days: int) -> list[NewsItem]:
@@ -335,13 +349,15 @@ def parse_homepage(home_html: str, base_url: str, limit: int, max_age_days: int)
         if not href:
             continue
 
-        href = urllib.parse.urlparse(absolutize(href, base_url)).path
-        if not href.startswith("/article/"):
+        parsed = urllib.parse.urlparse(absolutize(href, base_url))
+        path = parsed.path
+
+        if not path.startswith("/article/"):
             continue
 
-        if href in seen:
+        if path in seen:
             continue
-        seen.add(href)
+        seen.add(path)
 
         text = text_clean(link.get_text(" "))
         if not text:
@@ -351,11 +367,16 @@ def parse_homepage(home_html: str, base_url: str, limit: int, max_age_days: int)
         relative_time = relative_match.group(0) if relative_match else ""
 
         published_at = parse_relative_time(relative_time)
+
         if max_age_days > 0 and now - published_at > max_age_days * 86400:
             continue
 
         categories = []
-        for cat in ["Retail", "Classic", "Midnight", "Addons", "Ayuda y Addons", "Blizzard"]:
+        for cat in [
+            "Retail", "Classic", "Midnight", "Addons", "Ayuda y Addons",
+            "Blizzard", "Hearthstone", "Rumble", "Housing", "Diablo",
+            "Overwatch", "Starcraft", "Proyectos",
+        ]:
             if re.search(rf"\b{re.escape(cat)}\b", text, re.I):
                 categories.append(cat)
 
@@ -363,16 +384,13 @@ def parse_homepage(home_html: str, base_url: str, limit: int, max_age_days: int)
         if relative_match:
             title = text[:relative_match.start()].strip()
 
+        title = re.sub(r"^(Pixpo|Hols|AlterTime|Blizzard)\s+", "", title).strip()
         title = re.sub(r"\s+", " ", title)
-        title = re.sub(r"^(Pixpo|Hols|AlterTime)\s+", "", title).strip()
 
-        if len(title) > 180:
-            title = title[:180].rstrip() + "..."
+        if len(title) > 220:
+            title = title[:220].rstrip() + "..."
 
-        if not is_wow_item(title, categories):
-            continue
-
-        url = absolutize(href, base_url)
+        url = absolutize(path, base_url)
         slug = slugify(urllib.parse.urlparse(url).path.strip("/").split("/")[-1] or title)
 
         print(f"[HOME] {relative_time or 'sin fecha'} | {categories} | {title[:100]}")
@@ -401,42 +419,58 @@ def parse_homepage(home_html: str, base_url: str, limit: int, max_age_days: int)
                 id=hashlib.sha1(url.encode("utf-8")).hexdigest()[:12],
                 slug=slug,
                 title=title,
-                excerpt=excerpt[:220],
+                excerpt=excerpt[:260],
                 author="AlterTime",
                 published_at=published_at,
-                categories=categories or ["Retail"],
+                categories=categories or ["AlterTime"],
                 url=url,
                 relative_time=relative_time,
                 cover_url=cover_url,
                 body=body or [{"type": "paragraph", "text": excerpt}],
+                inline_image_urls=inline_images,
             )
         )
-
-        items[-1]._inline_image_urls = inline_images  # type: ignore[attr-defined]
 
         if limit > 0 and len(items) >= limit:
             break
 
     if not items:
-        raise RuntimeError("No se encontraron noticias WoW recientes en la portada de AlterTime.")
+        raise RuntimeError("No se encontraron noticias recientes en la portada de AlterTime.")
 
     return items
 
 
 def hydrate_images(items: list[NewsItem], media_dir: Path, images: bool, max_cover_width: int) -> list[NewsItem]:
     for item in items:
-        inline_urls = getattr(item, "_inline_image_urls", [])
-
         if images and item.cover_url:
-            asset = download_and_convert_image(item.cover_url, item.slug, media_dir, "Covers", 1, max_cover_width)
+            asset = download_and_convert_image(
+                item.cover_url,
+                item.slug,
+                media_dir,
+                "Covers",
+                1,
+                max_cover_width,
+                min_width=500,
+                min_height=180,
+            )
             if asset:
                 item.cover = asset.lua_path
 
-        if images and inline_urls:
+        if images and item.inline_image_urls:
             image_blocks: list[dict] = []
 
-            for idx, url in enumerate(inline_urls[:2], start=2):
-                asset = download_and_convert_image(url, item.slug, media_dir, "Inline", idx, 760)
+            for idx, url in enumerate(item.inline_image_urls[:3], start=2):
+                asset = download_and_convert_image(
+                    url,
+                    item.slug,
+                    media_dir,
+                    "Inline",
+                    idx,
+                    760,
+                    min_width=420,
+                    min_height=160,
+                )
+
                 if asset:
                     image_blocks.append(
                         {
