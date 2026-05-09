@@ -36,7 +36,7 @@ jobs:
             --output Data/NewsData.lua \
             --media-dir Media \
             --images \
-            --limit 20 \
+            --limit 50 \
             --max-age-days 7
 
       - name: Package addon
