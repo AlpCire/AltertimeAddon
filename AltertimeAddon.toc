@@ -3,7 +3,7 @@
 ## Notes: Noticias de AlterTime dentro de World of Warcraft.
 ## Author: RoCkEt
 ## Version: auto-17
-## IconTexture: Interface\AddOns\AltertimeAddon\Media\AltertimeLogo.blp
+## IconTexture: Interface\AddOns\AltertimeAddon\Media\AltertimeLogo.tga
 ## SavedVariables: AltertimeAddonDB
 
 
