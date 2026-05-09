@@ -2,9 +2,8 @@ local ADDON_NAME, ns = ...
 
 local WIDTH = 1040
 local HEIGHT = 700
-
 local CARD_HEIGHT = 150
-local PADDING = 18
+local LOGO_PATH = "Interface\\AddOns\\AltertimeAddon\\Media\\AltertimeLogo.tga"
 
 local function CreateFont(parent, size, flags)
     local fs = parent:CreateFontString(nil, "OVERLAY", "GameFontNormal")
@@ -58,16 +57,72 @@ local function CreateButton(parent, text)
     return btn
 end
 
-local function SetTextureSafe(texture, path)
-    if not path or path == "" then
-        texture:Hide()
-        return false
+local function GetNews()
+    return ns.News or {}
+end
+
+function ns.GetAvailableCategories()
+    local map = { ["Todas"] = true }
+    local list = { "Todas" }
+
+    for _, item in ipairs(GetNews()) do
+        for _, category in ipairs(item.categories or {}) do
+            if category and category ~= "" and not map[category] then
+                map[category] = true
+                table.insert(list, category)
+            end
+        end
     end
 
-    texture:SetTexture(path)
-    texture:SetTexCoord(0, 1, 0, 1)
-    texture:Show()
-    return true
+    table.sort(list, function(a, b)
+        if a == "Todas" then return true end
+        if b == "Todas" then return false end
+        return a < b
+    end)
+
+    return list
+end
+
+local function MatchesCategory(item, category)
+    if not category or category == "Todas" then return true end
+
+    for _, itemCategory in ipairs(item.categories or {}) do
+        if itemCategory == category then
+            return true
+        end
+    end
+
+    return false
+end
+
+local function MatchesSearch(item, query)
+    if not query or query == "" then return true end
+    query = string.lower(query)
+
+    local haystack = table.concat({
+        SafeText(item.title),
+        SafeText(item.excerpt),
+        SafeText(item.author),
+        table.concat(item.categories or {}, " "),
+    }, " ")
+
+    return string.find(string.lower(haystack), query, 1, true) ~= nil
+end
+
+local function InitCategoryDropdown(frame)
+    UIDropDownMenu_Initialize(frame.categoryFilter, function(_, level)
+        for _, category in ipairs(ns.GetAvailableCategories()) do
+            local info = UIDropDownMenu_CreateInfo()
+            info.text = category
+            info.checked = frame.selectedCategory == category
+            info.func = function()
+                frame.selectedCategory = category
+                UIDropDownMenu_SetText(frame.categoryFilter, category)
+                ns.RenderList()
+            end
+            UIDropDownMenu_AddButton(info, level)
+        end
+    end)
 end
 
 local function EnsureFrame()
@@ -96,26 +151,28 @@ local function EnsureFrame()
     title:SetText("AlterTime News")
     frame.title = title
 
-    local count = CreateFont(frame, 12, "")
+    local count = CreateFont(frame, 12)
     count:SetPoint("LEFT", title, "RIGHT", 18, -2)
     frame.count = count
 
     local close = CreateFrame("Button", nil, frame, "UIPanelCloseButton")
     close:SetPoint("TOPRIGHT", -6, -6)
 
-    local back = CreateButton(frame, "Volver")
-    back:SetPoint("TOPLEFT", 18, -86)
-    back:SetScript("OnClick", function()
-        ns.RenderList()
-    end)
-    frame.back = back
+    local categoryFilter = CreateFrame("Frame", nil, frame, "UIDropDownMenuTemplate")
+    categoryFilter:SetPoint("TOPLEFT", 18, -46)
+    frame.categoryFilter = categoryFilter
+    frame.selectedCategory = "Todas"
+    UIDropDownMenu_SetWidth(categoryFilter, 160)
+    UIDropDownMenu_SetText(categoryFilter, "Todas")
 
     local search = CreateFrame("EditBox", nil, frame, "InputBoxTemplate")
     search:SetSize(300, 24)
     search:SetPoint("TOPLEFT", 230, -48)
     search:SetAutoFocus(false)
     search:SetScript("OnTextChanged", function()
-        ns.RenderList()
+        if ns.RenderList then
+            ns.RenderList()
+        end
     end)
     frame.search = search
 
@@ -123,6 +180,13 @@ local function EnsureFrame()
     searchLabel:SetPoint("RIGHT", search, "LEFT", -8, 0)
     searchLabel:SetText("Buscar:")
     frame.searchLabel = searchLabel
+
+    local back = CreateButton(frame, "Volver")
+    back:SetPoint("TOPLEFT", 18, -86)
+    back:SetScript("OnClick", function()
+        ns.RenderList()
+    end)
+    frame.back = back
 
     local scroll = CreateFrame("ScrollFrame", nil, frame, "UIPanelScrollFrameTemplate")
     scroll:SetPoint("TOPLEFT", 18, -118)
@@ -136,44 +200,34 @@ local function EnsureFrame()
     frame.scroll = scroll
     frame.content = content
 
+    InitCategoryDropdown(frame)
+
     ns.MainFrame = frame
     return frame
 end
 
-local function GetNews()
-    return ns.News or {}
-end
-
-local function MatchesSearch(item, query)
-    if not query or query == "" then return true end
-    query = string.lower(query)
-
-    local haystack = table.concat({
-        SafeText(item.title),
-        SafeText(item.excerpt),
-        SafeText(item.author),
-        table.concat(item.categories or {}, " "),
-    }, " ")
-
-    return string.find(string.lower(haystack), query, 1, true) ~= nil
-end
-
 function ns.RenderList()
     local frame = EnsureFrame()
+
     frame.back:Hide()
     frame.search:Show()
     frame.searchLabel:Show()
+    frame.categoryFilter:Show()
 
     ClearChildren(frame.content)
 
     local news = GetNews()
-    frame.count:SetText(#news .. " noticias")
-
     local y = 0
+    local shown = 0
     local query = frame.search:GetText()
+    local category = frame.selectedCategory or "Todas"
+
+    UIDropDownMenu_SetText(frame.categoryFilter, category)
 
     for _, item in ipairs(news) do
-        if MatchesSearch(item, query) then
+        if MatchesSearch(item, query) and MatchesCategory(item, category) then
+            shown = shown + 1
+
             local card = CreatePanel(frame.content)
             card:SetPoint("TOPLEFT", 0, -y)
             card:SetSize(WIDTH - 92, CARD_HEIGHT)
@@ -186,19 +240,19 @@ function ns.RenderList()
             local tex = imageBox:CreateTexture(nil, "ARTWORK")
             tex:SetAllPoints(imageBox)
             tex:SetTexCoord(0, 1, 0, 1)
-            tex:SetTexture(item.cover or "Interface\\AddOns\\AltertimeAddon\\Media\\AltertimeLogo.blp")
+            tex:SetTexture(item.cover or LOGO_PATH)
 
             local title = CreateFont(card, 20, "OUTLINE")
             title:SetPoint("TOPLEFT", 330, -20)
             title:SetPoint("RIGHT", -18, 0)
             title:SetText(SafeText(item.title))
 
-            local excerpt = CreateFont(card, 13, "")
+            local excerpt = CreateFont(card, 13)
             excerpt:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -12)
             excerpt:SetPoint("RIGHT", -18, 0)
             excerpt:SetText(SafeText(item.excerpt))
 
-            local meta = CreateFont(card, 11, "")
+            local meta = CreateFont(card, 11)
             meta:SetPoint("BOTTOMRIGHT", -18, 18)
             meta:SetText(table.concat({
                 SafeText(item.author),
@@ -219,7 +273,9 @@ function ns.RenderList()
         end
     end
 
+    frame.count:SetText(shown .. "/" .. #news .. " noticias")
     frame.content:SetHeight(math.max(y, 1))
+    frame.scroll:SetVerticalScroll(0)
 end
 
 local function AddTextBlock(parent, y, blockType, text)
@@ -237,18 +293,14 @@ local function AddTextBlock(parent, y, blockType, text)
     fs:SetPoint("TOPLEFT", 18, -y)
     fs:SetWidth(WIDTH - 130)
     fs:SetText(SafeText(text))
-
     AddChild(parent, fs)
 
-    local height = fs:GetStringHeight()
-    return y + math.max(height, size + 8) + 14
+    return y + math.max(fs:GetStringHeight(), size + 8) + 14
 end
 
 local function AddImageBlock(parent, y, block)
     local path = block.path
-    if not path or path == "" then
-        return y
-    end
+    if not path or path == "" then return y end
 
     local maxWidth = WIDTH - 150
     local sourceWidth = tonumber(block.width) or maxWidth
@@ -260,7 +312,6 @@ local function AddImageBlock(parent, y, block)
     local ratio = sourceHeight / sourceWidth
     local displayWidth = math.min(maxWidth, sourceWidth)
     local displayHeight = math.floor(displayWidth * ratio)
-
     displayHeight = math.min(displayHeight, 460)
 
     local holder = CreateFrame("Frame", nil, parent)
@@ -278,9 +329,11 @@ end
 
 function ns.RenderArticle(item)
     local frame = EnsureFrame()
+
     frame.back:Show()
     frame.search:Hide()
     frame.searchLabel:Hide()
+    frame.categoryFilter:Hide()
 
     ClearChildren(frame.content)
 
@@ -323,6 +376,7 @@ function ns.RenderArticle(item)
     end
 
     y = y + 20
+
     local linkLabel = CreateFont(frame.content, 13, "OUTLINE")
     linkLabel:SetPoint("TOPLEFT", 18, -y)
     linkLabel:SetText("Enlace original:")
@@ -345,6 +399,7 @@ function ns.RenderArticle(item)
     AddChild(frame.content, copy)
 
     y = y + 44
+
     frame.content:SetHeight(math.max(y, HEIGHT - 150))
     frame.scroll:SetVerticalScroll(0)
 end
