@@ -5,9 +5,12 @@ import json
 import os
 import sys
 import urllib.request
-import urllib.parse
 import mimetypes
+from datetime import datetime, timezone
 from pathlib import Path
+
+
+GAME_VERSION_RETAIL_12_0_5 = 15855
 
 
 def encode_multipart(fields: dict, files: dict) -> tuple[bytes, str]:
@@ -24,9 +27,7 @@ def encode_multipart(fields: dict, files: dict) -> tuple[bytes, str]:
         path = Path(file_path)
         mime = mimetypes.guess_type(path.name)[0] or "application/zip"
         body.extend(f"--{boundary}\r\n".encode())
-        body.extend(
-            f'Content-Disposition: form-data; name="{name}"; filename="{path.name}"\r\n'.encode()
-        )
+        body.extend(f'Content-Disposition: form-data; name="{name}"; filename="{path.name}"\r\n'.encode())
         body.extend(f"Content-Type: {mime}\r\n\r\n".encode())
         body.extend(path.read_bytes())
         body.extend(b"\r\n")
@@ -44,23 +45,21 @@ def main() -> int:
     if not project_id:
         raise RuntimeError("Falta secret CF_PROJECT_ID")
 
-    dist = Path("dist")
-    zips = sorted(dist.glob("*.zip"), key=lambda p: p.stat().st_mtime, reverse=True)
-
+    zips = sorted(Path("dist").glob("*.zip"), key=lambda p: p.stat().st_mtime, reverse=True)
     if not zips:
         raise RuntimeError("No se encontró ningún ZIP en dist/")
 
     zip_path = zips[0]
 
-    # IMPORTANTE:
-    # Los IDs de gameVersions hay que confirmarlos en CurseForge.
-    # Podemos empezar con metadata mínima y ajustar después.
+    now = datetime.now(timezone.utc)
+    changelog = now.strftime("New articles published on %B %d, %Y at %H:%M UTC.")
+
     metadata = {
-        "changelog": "Actualización automática de noticias de AlterTime.",
+        "changelog": changelog,
         "changelogType": "text",
         "displayName": zip_path.stem,
         "releaseType": os.environ.get("CF_RELEASE_TYPE", "alpha"),
-        "gameVersions": [15855],
+        "gameVersions": [GAME_VERSION_RETAIL_12_0_5],
     }
 
     body, boundary = encode_multipart(
