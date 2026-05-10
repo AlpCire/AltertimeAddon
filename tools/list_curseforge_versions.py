@@ -11,12 +11,12 @@ def main() -> int:
     if not token:
         raise RuntimeError("Falta CF_API_TOKEN")
 
-    url = "https://api.curseforge.com/v1/games/1/versions"
+    url = "https://wow.curseforge.com/api/game/versions"
 
     req = urllib.request.Request(
         url,
         headers={
-            "x-api-key": token,
+            "X-Api-Token": token,
             "Accept": "application/json",
         },
     )
@@ -24,9 +24,9 @@ def main() -> int:
     with urllib.request.urlopen(req, timeout=60) as response:
         data = json.loads(response.read().decode("utf-8"))
 
-    for item in data.get("data", []):
+    for item in data:
         name = str(item.get("name", ""))
-        if "12.0.5" in name or "12.0." in name:
+        if name.startswith("12.0.") or name == "12.0.5":
             print(item)
 
     return 0
