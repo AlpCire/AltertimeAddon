@@ -3,14 +3,14 @@ name: Build and Upload AlterTime News Addon
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 */6 * * *"
+    - cron: "0 * * * *"
 
 permissions:
   contents: write
 
 env:
-  DEBUG_CF: false
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  DEBUG_CF: "false"
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
 jobs:
   build:
@@ -47,7 +47,18 @@ jobs:
             --limit 50 \
             --max-age-days 7
 
+      - name: Check generated changes
+        run: |
+          if git diff --quiet -- Data Media; then
+            echo "HAS_CHANGES=false" >> $GITHUB_ENV
+            echo "No news changes detected. Skipping package and upload."
+          else
+            echo "HAS_CHANGES=true" >> $GITHUB_ENV
+            echo "News changes detected. Package and upload will continue."
+          fi
+
       - name: Package addon
+        if: env.HAS_CHANGES == 'true'
         run: |
           python tools/package_addon.py \
             --addon-dir . \
@@ -55,14 +66,16 @@ jobs:
             --version "auto-${{ github.run_number }}"
 
       - name: Upload to CurseForge
+        if: env.HAS_CHANGES == 'true'
         env:
           CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
           CF_PROJECT_ID: ${{ secrets.CF_PROJECT_ID }}
-          CF_RELEASE_TYPE: Beta
+          CF_RELEASE_TYPE: beta
         run: |
           python tools/upload_curseforge.py
 
       - name: Commit generated content
+        if: env.HAS_CHANGES == 'true'
         run: |
           git config user.name "AlterTime Bot"
           git config user.email "bot@altertime.es"
