@@ -1,8 +1,5 @@
 name: Build and Upload AlterTime News Addon
 
-env:
-  DEBUG_CF: false
-
 on:
   workflow_dispatch:
   schedule:
@@ -12,6 +9,7 @@ permissions:
   contents: write
 
 env:
+  DEBUG_CF: false
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
