@@ -58,7 +58,7 @@ def main() -> int:
         "changelog": changelog,
         "changelogType": "text",
         "displayName": zip_path.stem,
-        "releaseType": os.environ.get("CF_RELEASE_TYPE", "alpha"),
+        "releaseType": os.environ.get("CF_RELEASE_TYPE", "beta"),
         "gameVersions": [GAME_VERSION_RETAIL_12_0_5],
     }
 
