@@ -29,6 +29,12 @@ jobs:
           pip install --upgrade pip
           pip install Pillow beautifulsoup4
 
+      - name: Debug CurseForge game versions
+        env:
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+        run: |
+          python tools/list_curseforge_versions.py
+
       - name: Generate news from AlterTime homepage
         run: |
           python tools/rss_to_news.py \
