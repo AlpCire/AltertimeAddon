@@ -37,8 +37,11 @@ jobs:
         run: |
           python tools/list_curseforge_versions.py
 
-      - name: Debug generated media filenames
+      - name: Debug generated media
         run: |
+          echo "=== Git status Media ==="
+          git status --short Media
+
           echo "=== Covers ==="
           find Media/Covers -type f | sort || true
 
