@@ -60,6 +60,7 @@ def main() -> int:
         "changelogType": "text",
         "displayName": zip_path.stem,
         "releaseType": os.environ.get("CF_RELEASE_TYPE", "alpha"),
+        "gameVersions": [100206],
     }
 
     body, boundary = encode_multipart(
