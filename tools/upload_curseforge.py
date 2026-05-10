@@ -52,12 +52,14 @@ def main() -> int:
     zip_path = zips[0]
 
     now = datetime.now(timezone.utc)
+
     changelog = now.strftime("New articles published on %B %d, %Y at %H:%M UTC.")
+    display_name = now.strftime("AlterTime News - %Y-%m-%d %H:%M UTC")
 
     metadata = {
         "changelog": changelog,
         "changelogType": "text",
-        "displayName": zip_path.stem,
+        "displayName": display_name,
         "releaseType": os.environ.get("CF_RELEASE_TYPE", "beta"),
         "gameVersions": [GAME_VERSION_RETAIL_12_0_5],
     }
@@ -83,6 +85,7 @@ def main() -> int:
         with urllib.request.urlopen(req, timeout=60) as response:
             payload = response.read().decode("utf-8", errors="replace")
             print(f"[OK] Subida CurseForge completada: {payload}")
+            print(f"[OK] Display name: {display_name}")
             return 0
     except urllib.error.HTTPError as exc:
         print(f"[ERROR] CurseForge HTTP {exc.code}", file=sys.stderr)
