@@ -1,6 +1,6 @@
 local ADDON_NAME, ns = ...
 
-ns.VERSION = "auto-26"
+ns.VERSION = "auto-33"
 ns.ADDON_NAME = ADDON_NAME
 
 local defaults = {
