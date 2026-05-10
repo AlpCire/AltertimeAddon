@@ -58,7 +58,7 @@ jobs:
         env:
           CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
           CF_PROJECT_ID: ${{ secrets.CF_PROJECT_ID }}
-          CF_RELEASE_TYPE: alpha
+          CF_RELEASE_TYPE: Beta
         run: |
           python tools/upload_curseforge.py
 
