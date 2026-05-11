@@ -21,9 +21,7 @@ except Exception:
     Image = None
 
 
-USER_AGENT = "AlterTimeAddonGenerator/0.4.3 (+https://altertime.es)"
-
-EXCLUDED_HOME_KEYWORDS = set()
+USER_AGENT = "AlterTimeAddonGenerator/0.4.7 (+https://altertime.es)"
 
 
 @dataclass
@@ -263,7 +261,7 @@ def should_skip_text(text: str) -> bool:
     return any(x in lower for x in bad)
 
 
-def find_article_h1(soup: BeautifulSoup) -> object | None:
+def find_article_h1(soup: BeautifulSoup):
     h1s = soup.find_all("h1")
     for h1 in h1s:
         text = text_clean(h1.get_text(" "))
@@ -288,12 +286,8 @@ def extract_article_body(article_html: str, article_url: str) -> tuple[str, str,
     blocks: list[dict] = []
     inline_images: list[str] = []
     seen_text: set[str] = set()
-    collecting = True
 
     for node in h1.find_all_next(["h2", "h3", "p", "li", "img"]):
-        if not collecting:
-            break
-
         if node.name == "img":
             src = (
                 node.get("src")
@@ -312,7 +306,6 @@ def extract_article_body(article_html: str, article_url: str) -> tuple[str, str,
         text = text_clean(node.get_text(" "))
 
         if should_stop_article_text(text):
-            collecting = False
             break
 
         if should_skip_text(text):
@@ -488,13 +481,19 @@ def hydrate_images(items: list[NewsItem], media_dir: Path, images: bool, max_cov
 
 
 def render_lua(items: list[NewsItem]) -> str:
+    latest_stamp = max((item.published_at for item in items), default=0)
+    news_signature = hashlib.sha1(
+        "|".join(item.id for item in items).encode("utf-8")
+    ).hexdigest()
+
     lines = [
         "local ADDON_NAME, ns = ...",
         "",
         "-- Generado automáticamente por tools/rss_to_news.py.",
         "-- Fuente principal: portada + artículo AlterTime.",
         "-- No editar a mano salvo emergencia.",
-        f"ns.NewsGeneratedAt = {int(time.time())}",
+        f"ns.NewsGeneratedAt = {latest_stamp}",
+        f"ns.NewsSignature = {lua_escape(news_signature)}",
         'ns.NewsSource = "homepage+article"',
         "",
         "ns.News = {",
@@ -546,7 +545,7 @@ def main() -> int:
     parser.add_argument("--output", default="Data/NewsData.lua")
     parser.add_argument("--media-dir", default="Media")
     parser.add_argument("--images", action="store_true")
-    parser.add_argument("--limit", type=int, default=20)
+    parser.add_argument("--limit", type=int, default=50)
     parser.add_argument("--max-age-days", type=int, default=7)
     parser.add_argument("--max-cover-width", type=int, default=768)
     parser.add_argument("--rss", default="")
