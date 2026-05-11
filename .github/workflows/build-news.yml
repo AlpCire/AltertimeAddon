@@ -2,8 +2,13 @@ name: Build and Upload AlterTime News Addon
 
 on:
   workflow_dispatch:
+    inputs:
+      force_upload:
+        description: "Force package and CurseForge upload"
+        required: false
+        default: "false"
   schedule:
-    - cron: "0 * * * *"
+    - cron: "31 * * * *"
 
 permissions:
   contents: write
@@ -54,12 +59,18 @@ jobs:
             --max-age-days 7
 
       - name: Check news signature changes
+        env:
+          FORCE_UPLOAD: ${{ github.event.inputs.force_upload || 'false' }}
         run: |
           NEW_SIGNATURE=$(grep -E 'ns\.NewsSignature = ' Data/NewsData.lua | sed -E 's/.*"([^"]+)".*/\1/' || true)
           echo "NEW_NEWS_SIGNATURE=$NEW_SIGNATURE" >> $GITHUB_ENV
           echo "New signature: $NEW_SIGNATURE"
+          echo "Force upload: $FORCE_UPLOAD"
 
-          if [ -z "$NEW_SIGNATURE" ]; then
+          if [ "$FORCE_UPLOAD" = "true" ]; then
+            echo "HAS_CHANGES=true" >> $GITHUB_ENV
+            echo "Force upload enabled. Package and upload will continue."
+          elif [ -z "$NEW_SIGNATURE" ]; then
             echo "HAS_CHANGES=true" >> $GITHUB_ENV
             echo "No news signature found. Package and upload will continue."
           elif [ "$OLD_NEWS_SIGNATURE" = "$NEW_SIGNATURE" ]; then
