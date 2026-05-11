@@ -2,7 +2,7 @@
 ## Title: AlterTime News
 ## Notes: Noticias de AlterTime dentro de World of Warcraft.
 ## Author: RoCkEt
-## Version: auto-46
+## Version: auto-47
 ## IconTexture: Interface\AddOns\AltertimeAddon\Media\AltertimeLogo.tga
 ## SavedVariables: AltertimeAddonDB
 
