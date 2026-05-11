@@ -37,6 +37,12 @@ jobs:
         run: |
           python tools/list_curseforge_versions.py
 
+      - name: Capture previous news signature
+        run: |
+          OLD_SIGNATURE=$(grep -E 'ns\.NewsSignature = ' Data/NewsData.lua | sed -E 's/.*"([^"]+)".*/\1/' || true)
+          echo "OLD_NEWS_SIGNATURE=$OLD_SIGNATURE" >> $GITHUB_ENV
+          echo "Old signature: $OLD_SIGNATURE"
+
       - name: Generate news from AlterTime homepage
         run: |
           python tools/rss_to_news.py \
@@ -47,14 +53,21 @@ jobs:
             --limit 50 \
             --max-age-days 7
 
-      - name: Check generated changes
+      - name: Check news signature changes
         run: |
-          if git diff --quiet -- Data Media; then
+          NEW_SIGNATURE=$(grep -E 'ns\.NewsSignature = ' Data/NewsData.lua | sed -E 's/.*"([^"]+)".*/\1/' || true)
+          echo "NEW_NEWS_SIGNATURE=$NEW_SIGNATURE" >> $GITHUB_ENV
+          echo "New signature: $NEW_SIGNATURE"
+
+          if [ -z "$NEW_SIGNATURE" ]; then
+            echo "HAS_CHANGES=true" >> $GITHUB_ENV
+            echo "No news signature found. Package and upload will continue."
+          elif [ "$OLD_NEWS_SIGNATURE" = "$NEW_SIGNATURE" ]; then
             echo "HAS_CHANGES=false" >> $GITHUB_ENV
-            echo "No news changes detected. Skipping package and upload."
+            echo "No new articles detected. Skipping package and upload."
           else
             echo "HAS_CHANGES=true" >> $GITHUB_ENV
-            echo "News changes detected. Package and upload will continue."
+            echo "New articles detected. Package and upload will continue."
           fi
 
       - name: Package addon
